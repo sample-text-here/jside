@@ -11,5 +11,8 @@
     "plugin:import/errors",
     "plugin:import/warnings"
   ],
+  "rules": {
+    "@typescript-eslint/no-use-before-define": "off"
+  },
   "parser": "@typescript-eslint/parser"
 }

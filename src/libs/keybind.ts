@@ -3,8 +3,13 @@ export class Bind {
   alt = false;
   shift = false;
   key = "";
-  constructor(obj?: {ctrl: boolean, alt: boolean, shift: boolean, key: string,}) {
-    if(!obj) return this;
+  constructor(obj?: {
+    ctrl: boolean;
+    alt: boolean;
+    shift: boolean;
+    key: string;
+  }) {
+    if (!obj) return this;
     this.ctrl = obj.ctrl || false;
     this.alt = obj.alt || false;
     this.shift = obj.shift || false;
@@ -38,7 +43,7 @@ export class Bind {
     str
       .replace(/\s/g, "")
       .split("+")
-      .forEach(i => {
+      .forEach((i) => {
         switch (i) {
           case "ctrl":
           case "alt":

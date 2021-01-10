@@ -2,10 +2,11 @@ import { ncp } from "ncp";
 import { extname } from "path";
 
 ncp(
-  "src", "dist",
-  { 
-    filter: (name): boolean => extname(name) !== ".ts" 
-  }, 
+  "src",
+  "dist",
+  {
+    filter: (name): boolean => extname(name) !== ".ts",
+  },
   function (err) {
     if (err) {
       console.error(err);

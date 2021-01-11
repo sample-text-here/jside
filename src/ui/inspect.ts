@@ -12,19 +12,45 @@ function select(el: HTMLElement): void {
   selection.addRange(range);
 }
 
-function displayClass(obj): HTMLElement {
-  const main = displayObject(obj);
-  const text = create("div", ["class"], obj.constructor.name);
-  main.prepend(text);
-  return main;
-}
-
-/*
 function displayArray(arr: Array<unknown>): HTMLElement {
-  // TODO: do this better
-  return displayObject(Array);
+  let expanded = false;
+  const body = create("div", ["expand", "canExpand"]);
+  const cont = create("div", ["array"]);
+  function toggle(e): void {
+    if (!e.target.classList.contains("expand")) return;
+    if (e.target.parentNode !== cont) return;
+    if (e.detail > 1 && expanded) {
+      select(cont);
+      return;
+    }
+    expanded = !expanded;
+    if (expanded) {
+      cont.classList.remove("expand");
+      clear(cont);
+      cont.append(create("div", ["expand"], "["));
+      for (const i in arr) {
+        const item = create("div", ["item"]);
+        item.append(displayPart(arr[i]));
+        if(Number(i) !== arr.length - 1)item.append(create("div", ["comma"], ","));
+        cont.append(item);
+      }
+      if(arr.length>10) {
+        cont.style.display="block";
+      }else{
+        cont.style.display="flex";
+      }
+      cont.append(create("div", ["expand"], "]"));
+    } else {
+      cont.classList.add("expand");
+      clear(cont);
+      cont.append(create("div", ["expand"], "[...]"));
+    }
+  }
+  cont.append(create("div", ["expand"], "[...]"));
+  body.append(cont);
+  body.addEventListener("click", toggle);
+  return body;
 }
-*/
 
 function displayObject(obj): HTMLElement {
   let expanded = false;
@@ -76,8 +102,6 @@ function displayError(err: Error): HTMLElement {
 }
 
 function displayPart(thing): HTMLElement {
-
-
   if(typeof thing === "undefined") return create("div", ["value", "undefined"], "undefined");
   switch (typeof thing) {
     case "string":
@@ -91,11 +115,9 @@ function displayPart(thing): HTMLElement {
       break;
     case "object":
       if (thing === null) return create("div", ["value", "number"], "null");
-      if (thing instanceof Array)
-        return create("div", ["value", "object"], "arr");
+      if (thing instanceof Array) return displayArray(thing);
       if (thing instanceof Error) return displayError(thing);
-      if (thing.constructor.name === "Object") return displayObject(thing);
-      return displayClass(thing);
+      return displayObject(thing);
     case "function":
       return displayFunction(thing);
       break;

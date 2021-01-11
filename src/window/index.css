@@ -29,3 +29,7 @@ body {
   bottom: 0;
   width: 50%;
 }
+
+.bar {
+  background: var(--foreground);
+}

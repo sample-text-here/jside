@@ -25,9 +25,13 @@
   cursor: pointer;
 }
 
-.display .object > div:not(.expand),
-.display .array > div:not(.expand) {
+.display .object > div:not(.expand) {
   margin-left: 1em;
+}
+
+.display .array > div:not(.expand) {
+  padding-left: 0.5em;
+  padding-right: 0.5em;
 }
 
 .key,
@@ -44,8 +48,9 @@
   color: #E1D672;
 }
 
-.display .number {
-  color: #48c;
+.display .number,
+.display .boolean {
+  color: #A97DF7;
 }
 
 .display .key {

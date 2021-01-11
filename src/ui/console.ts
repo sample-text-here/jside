@@ -7,7 +7,6 @@ export class Console extends Element {
   input: HTMLElement;
   constructor(parent: HTMLElement) {
     super();
-    
     const main = create("div", ["console"]);
     const content = create("div");
     const input = create("div");

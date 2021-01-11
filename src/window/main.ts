@@ -8,9 +8,11 @@ import { run } from "../libs/run";
 const main = document.getElementById("main");
 const [edit, bar, consol] = [
   new Editor(main),
-  new Bar(main, "upDown"),
+  new Bar(main, "leftRight"),
   new Console(main),
 ];
+
+bar.element.style.gridArea = "resize";
 
 edit.listen("save", "ctrl-s", (editor) => {
   console.log("saving", editor.session.getValue());
@@ -25,15 +27,11 @@ edit.listen("format", "ctrl-alt-s", (editor) => {
     cursorOffset: editor.session.doc.positionToIndex(
       editor.selection.getCursor()
     ),
-  });
+  }, {parser: "babel"});
   editor.session.setValue(result.formatted, -1);
   editor.moveCursorToPosition(
     editor.session.doc.indexToPosition(result.cursorOffset)
   );
-});
-
-window.addEventListener("DOMContentLoaded", (e) => {
-  edit.editor.resize();
 });
 
 ipcRenderer.on("runCode", (e) => {

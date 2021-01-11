@@ -61,6 +61,7 @@
   },
   "dependencies": {
     "ace-builds": "^1.4.12",
-    "electron-squirrel-startup": "^1.0.0"
+    "electron-squirrel-startup": "^1.0.0",
+    "vm2": "^3.9.2"
   }
 }

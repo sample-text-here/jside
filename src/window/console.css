@@ -1,0 +1,66 @@
+.console {
+  /* border-left: solid var(--foreground) 2px; */
+  padding: 0.5em;
+  overflow-y: auto;
+}
+
+.display {
+  padding: 0.5em;
+}
+
+.display:not(:last-child) {
+  border-bottom: solid var(--foreground) 1px;
+}
+
+.display div:not(.expand) {
+  cursor: auto;
+}
+
+.display .item,
+.display .expand {
+  display: flex;
+}
+
+.display .expand {
+  cursor: pointer;
+}
+
+.display .object > div:not(.expand),
+.display .array > div:not(.expand) {
+  margin-left: 1em;
+}
+
+.key,
+.value {
+  user-select: all;
+}
+
+.display .colon,
+.display .class {
+  padding-right: 1em;
+}
+
+.display .string {
+  color: #E1D672;
+}
+
+.display .number {
+  color: #48c;
+}
+
+.display .key {
+  color: #2c4;
+}
+
+.display .function {
+  color: #C95BFC;
+}
+
+.display .undefined {
+  font-style: italic;
+  color: #666;
+}
+
+.display .error {
+  color: #d43;
+}

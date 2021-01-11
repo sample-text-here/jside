@@ -9,16 +9,28 @@ if (require("electron-squirrel-startup")) {
 
 const createWindow = (): void => {
   // Create the browser window.
-  const mainWindow = new BrowserWindow({
-    height: 600,
-    width: 800,
+  const win = new BrowserWindow({
+    height: 400,
+    width: 600,
     webPreferences: {
       nodeIntegration: true,
     },
   });
 
   // and load the index.html of the app.
-  mainWindow.loadFile(path.join(__dirname, "window/index.html"));
+  win.loadFile(path.join(__dirname, "window/index.html"));
+
+  win.webContents.on("before-input-event", (e, input) => {
+    if (
+      (input.control || input.meta) &&
+      input.key === "Enter" &&
+      !input.shift &&
+      !input.alt
+    ) {
+      win.webContents.send("runCode");
+      e.preventDefault();
+    }
+  });
 };
 
 // This method will be called when Electron has finished

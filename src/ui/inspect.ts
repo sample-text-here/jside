@@ -1,22 +1,4 @@
-function create(
-  type: string,
-  classes?: Array<string>,
-  text?: string
-): HTMLElement {
-  const el = document.createElement(type);
-  if (classes) classes.forEach((i) => el.classList.add(i));
-  if (text) {
-    const node = document.createTextNode(text);
-    el.append(node);
-  }
-  return el;
-}
-
-function clear(el: HTMLElement): void {
-  while (el.firstChild) {
-    el.removeChild(el.lastChild);
-  }
-}
+import { create, clear } from "../libs/elements";
 
 function select(el: HTMLElement): void {
   const selection = window.getSelection();
@@ -87,7 +69,16 @@ function displayFunction(func: Function): HTMLElement {
   return create("div", ["function"], preview);
 }
 
+function displayError(err: Error): HTMLElement {
+  const main = err.toString();
+  const stack = ""; //err.stack; // problem with vm2
+  return create("div", ["error"], main+stack);
+}
+
 function displayPart(thing): HTMLElement {
+
+
+  if(typeof thing === "undefined") return create("div", ["value", "undefined"], "undefined");
   switch (typeof thing) {
     case "string":
       return create("div", ["value", "string"], `"${thing}"`);
@@ -102,6 +93,7 @@ function displayPart(thing): HTMLElement {
       if (thing === null) return create("div", ["value", "number"], "null");
       if (thing instanceof Array)
         return create("div", ["value", "object"], "arr");
+      if (thing instanceof Error) return displayError(thing);
       if (thing.constructor.name === "Object") return displayObject(thing);
       return displayClass(thing);
     case "function":

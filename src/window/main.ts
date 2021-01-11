@@ -27,7 +27,7 @@ edit.listen("format", "ctrl-alt-s", (editor) => {
   const index = editor.session.doc.positionToIndex(cursor);
   const value = editor.session.getValue();
   const result = format(value, { cursorOffset: index, parser: "babel" });
-  editor.session.setValue(result.formatted, -1);
+  editor.session.doc.setValue(result.formatted, -1);
   const position = editor.session.doc.indexToPosition(result.cursorOffset);
   editor.moveCursorToPosition(position);
 });

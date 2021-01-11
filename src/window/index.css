@@ -29,3 +29,7 @@ body {
 .bar {
   background: var(--foreground);
 }
+
+.bar:active {
+  background: var(--accent);
+}

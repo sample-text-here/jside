@@ -9,10 +9,10 @@ ace.require("ace/ext/language_tools");
 
 export class Editor extends Element {
   editor;
-  
+
   constructor(parent: HTMLElement) {
     super();
-    
+
     // create element
     const el = create("div", ["editor"]);
     el.id = Math.random().toString(36).slice(2);
@@ -28,7 +28,6 @@ export class Editor extends Element {
     editor.setOption("esversion", "8");
     this.editor = editor;
     this.element = el;
-
   }
 
   listen(name: string, key: string, exec: Function): void {

@@ -31,13 +31,14 @@ function displayArray(arr: Array<unknown>): HTMLElement {
       for (const i in arr) {
         const item = create("div", ["item"]);
         item.append(displayPart(arr[i]));
-        if(Number(i) !== arr.length - 1)item.append(create("div", ["comma"], ","));
+        if (Number(i) !== arr.length - 1)
+          item.append(create("div", ["comma"], ","));
         cont.append(item);
       }
-      if(arr.length>10) {
-        cont.style.display="block";
-      }else{
-        cont.style.display="flex";
+      if (arr.length > 10) {
+        cont.style.display = "block";
+      } else {
+        cont.style.display = "flex";
       }
       cont.append(create("div", ["expand"], "]"));
     } else {
@@ -98,11 +99,12 @@ function displayFunction(func: Function): HTMLElement {
 function displayError(err: Error): HTMLElement {
   const main = err.toString();
   const stack = ""; //err.stack; // problem with vm2
-  return create("div", ["error"], main+stack);
+  return create("div", ["error"], main + stack);
 }
 
 function displayPart(thing): HTMLElement {
-  if(typeof thing === "undefined") return create("div", ["value", "undefined"], "undefined");
+  if (typeof thing === "undefined")
+    return create("div", ["value", "undefined"], "undefined");
   switch (typeof thing) {
     case "string":
       return create("div", ["value", "string"], `"${thing}"`);

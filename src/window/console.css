@@ -45,12 +45,12 @@
 }
 
 .display .string {
-  color: #E1D672;
+  color: #e1d672;
 }
 
 .display .number,
 .display .boolean {
-  color: #A97DF7;
+  color: #a97df7;
 }
 
 .display .key {
@@ -58,7 +58,7 @@
 }
 
 .display .function {
-  color: #C95BFC;
+  color: #c95bfc;
 }
 
 .display .undefined {

@@ -7,27 +7,23 @@
 }
 
 body {
-  font: 12px/normal 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;
+  font: 12px / normal "Monaco", "Menlo", "Ubuntu Mono", "Consolas",
+    "source-code-pro", monospace;
   color: var(--foreground);
   background: var(--background);
   overflow: hidden;
 }
 
 #main {
-  position: ;
-  display: grid;
-  height: 100vh;
-  width: 100vw;
-  grid-template-areas: "editor resize console";
-  grid-template-columns: 1fr 3px 1fr;
-}
-
-.editor {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
-  bottom: 0;
-  width: 50%;
+  height: 100vh;
+  width: 100vw;
+
+  display: grid;
+  grid-template-areas: "editor resize console";
+  grid-template-columns: 1fr 3px 1fr;
 }
 
 .bar {

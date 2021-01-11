@@ -23,16 +23,27 @@ edit.listen("open", "ctrl-o", () => {
 });
 
 edit.listen("format", "ctrl-alt-s", (editor) => {
-  const result = format(editor.session.getValue(), {
-    cursorOffset: editor.session.doc.positionToIndex(
-      editor.selection.getCursor()
-    ),
-  }, {parser: "babel"});
+  const cursor = editor.selection.getCursor();
+  const index = editor.session.doc.positionToIndex(cursor);
+  const value = editor.session.getValue();
+  const result = format(value, { cursorOffset: index, parser: "babel" });
   editor.session.setValue(result.formatted, -1);
-  editor.moveCursorToPosition(
-    editor.session.doc.indexToPosition(result.cursorOffset)
-  );
+  const position = editor.session.doc.indexToPosition(result.cursorOffset);
+  editor.moveCursorToPosition(position);
 });
+
+bar.dragged = function (e) {
+  const barWidth = 3,
+    minX = 0,
+    maxX = window.innerWidth - barWidth;
+  let newX = e.clientX;
+  if (newX < minX) newX = minX;
+  if (newX > maxX) newX = maxX;
+  main.style.gridTemplateColumns = `${newX}px ${barWidth}px 1fr`;
+  const atEdge = newX === minX || newX === maxX;
+  bar.element.style.opacity = String(atEdge ? 0 : 1);
+  edit.editor.resize();
+};
 
 ipcRenderer.on("runCode", (e) => {
   const res = run(edit.editor.session.getValue());

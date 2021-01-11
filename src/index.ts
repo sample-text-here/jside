@@ -15,10 +15,15 @@ const createWindow = (): void => {
     webPreferences: {
       nodeIntegration: true,
     },
+    show: false,
   });
 
   // and load the index.html of the app.
   win.loadFile(path.join(__dirname, "window/index.html"));
+
+  win.once("ready-to-show", () => {
+    win.show();
+  });
 
   win.webContents.on("before-input-event", (e, input) => {
     if (

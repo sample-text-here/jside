@@ -2,6 +2,11 @@ import { app, BrowserWindow, Menu } from "electron";
 import { generateMenu } from "./libs/menu";
 import * as path from "path";
 
+const prevent = [
+  { key: "enter", ctrl: true, shift: false, alt: false, message: "run" },
+  { key: "l", ctrl: true, shift: false, alt: false, message: "clear" },
+];
+
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require("electron-squirrel-startup")) {
   // eslint-disable-line global-require
@@ -28,19 +33,17 @@ const createWindow = (): void => {
   });
 
   win.webContents.on("before-input-event", (e, input) => {
-    switch (input.key) {
-      case "Enter":
-        if ((input.control || input.meta) && !input.shift && !input.alt) {
-          win.webContents.send("runCode");
-          e.preventDefault();
-        }
-        break;
-      case "l":
-        if ((input.control || input.meta) && !input.shift && !input.alt) {
-          win.webContents.send("clearConsole");
-          e.preventDefault();
-        }
-        break;
+    for (const i of prevent) {
+      if (
+        input.key.toLowerCase() === i.key &&
+        i.ctrl === (input.control || input.meta) &&
+        i.shift === input.shift &&
+        i.alt === input.alt
+      ) {
+        e.preventDefault();
+
+        win.webContents.send("menu", i.message);
+      }
     }
   });
 

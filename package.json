@@ -6,7 +6,7 @@
   "main": "dist/index.js",
   "scripts": {
     "prestart": "npm run build",
-    "start": "electron-forge start",
+    "start": "electron-forge start -- --dev",
     "build": "tsc && node dist/copy.js",
     "package": "electron-forge package",
     "make": "electron-forge make",

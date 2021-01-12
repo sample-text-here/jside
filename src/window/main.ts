@@ -85,15 +85,6 @@ consol.run = (code) => {
   consol.log(res);
 };
 
-ipcRenderer.on("runCode", () => {
-  const res = run(edit.editor.session.getValue());
-  consol.log(res);
-});
-
-ipcRenderer.on("clearConsole", () => {
-  consol.clear();
-});
-
 ipcRenderer.on("menu", (e, message) => {
   console.log(message);
   switch (message) {
@@ -110,6 +101,10 @@ ipcRenderer.on("menu", (e, message) => {
       format();
       break;
     case "run":
+      consol.log(run(edit.editor.session.getValue()));
+      break;
+    case "clear":
+      consol.clear();
       break;
   }
 });

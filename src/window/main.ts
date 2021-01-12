@@ -2,7 +2,7 @@ import { ipcRenderer } from "electron";
 import { Editor } from "../ui/editor";
 import { Console } from "../ui/console";
 import { Bar } from "../ui/dragBar";
-import { formatWithCursor as format } from "prettier";
+import { formatWithCursor } from "prettier";
 import { run, runLess } from "../libs/run";
 import * as files from "../libs/files";
 import { basename } from "path";
@@ -25,23 +25,23 @@ edit.editor.session.on("change", () => {
   updateTitle();
 });
 
-edit.listen("save", "ctrl-s", (editor) => {
+function save() {
   if (!filePath) filePath = files.fileSave();
   if (!filePath) return;
   updated = false;
   updateTitle();
-  files.saveFile(filePath, editor.session.getValue());
-});
+  files.saveFile(filePath, edit.editor.session.getValue());
+}
 
-edit.listen("saveAs", "ctrl-shift-s", (editor) => {
+function saveAs() {
   filePath = files.fileSave();
   if (!filePath) return;
   updated = false;
   updateTitle();
-  files.saveFile(filePath, editor.session.getValue());
-});
+  files.saveFile(filePath, edit.editor.session.getValue());
+}
 
-edit.listen("open", "ctrl-o", () => {
+function open() {
   if (updated && filePath && !window.confirm("your file isnt saved, continue?"))
     return;
   filePath = files.fileOpen()[0];
@@ -51,17 +51,21 @@ edit.listen("open", "ctrl-o", () => {
     updateTitle();
   });
   edit.editor.session.setValue(files.openFile(filePath));
-});
+}
 
-edit.listen("format", "ctrl-alt-s", (editor) => {
+function format() {
+  const editor = edit.editor;
   const cursor = editor.selection.getCursor();
   const index = editor.session.doc.positionToIndex(cursor);
   const value = editor.session.getValue();
-  const result = format(value, { cursorOffset: index, parser: "babel" });
+  const result = formatWithCursor(value, {
+    cursorOffset: index,
+    parser: "babel",
+  });
   editor.session.doc.setValue(result.formatted);
   const position = editor.session.doc.indexToPosition(result.cursorOffset);
   editor.moveCursorToPosition(position);
-});
+}
 
 bar.dragged = function (e) {
   const barWidth = 3,
@@ -88,6 +92,26 @@ ipcRenderer.on("runCode", () => {
 
 ipcRenderer.on("clearConsole", () => {
   consol.clear();
+});
+
+ipcRenderer.on("menu", (e, message) => {
+  console.log(message);
+  switch (message) {
+    case "save":
+      save();
+      break;
+    case "saveAs":
+      saveAs();
+      break;
+    case "open":
+      open();
+      break;
+    case "format":
+      format();
+      break;
+    case "run":
+      break;
+  }
 });
 
 function updateTitle(): void {

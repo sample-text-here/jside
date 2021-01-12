@@ -31,9 +31,10 @@ export class Editor extends Element {
       enableBasicAutocompletion: true,
       enableSnippets: true,
       enableLiveAutocompletion: true,
-      esversion: 8,
+      esVersion: 8,
       useSoftTabs: true,
       tabSize: 2,
+      newLineMode: "unix",
     });
     this.editor = editor;
     this.element = el;

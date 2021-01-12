@@ -1,9 +1,16 @@
 .console {
-  /* border-left: solid var(--foreground) 2px; */
   padding: 0.5em;
   overflow-y: auto;
+  position: relative;
 }
 
+.input {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+}
+
+.input,
 .display {
   padding: 0.5em;
 }

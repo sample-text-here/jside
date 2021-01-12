@@ -1,11 +1,13 @@
 import { Element } from "./index";
 import { create } from "../libs/elements";
 import * as ace from "ace-builds/src-noconflict/ace";
+import * as langTools from "ace-builds/src-noconflict/ext-language_tools";
 const acePath = "../../node_modules/ace-builds/src-noconflict";
 ace.config.set("basePath", acePath);
 ace.config.set("modePath", acePath);
 ace.config.set("themePath", acePath);
-ace.require("ace/ext/language_tools");
+
+langTools.setCompleters([langTools.textCompleter]);
 
 export class Editor extends Element {
   editor;
@@ -25,7 +27,14 @@ export class Editor extends Element {
     editor.session.setMode("ace/mode/javascript");
     editor.setShowPrintMargin(false);
     editor.setKeyboardHandler("ace/keyboard/vscode");
-    editor.setOption("esversion", "8");
+    editor.setOptions({
+      enableBasicAutocompletion: true,
+      enableSnippets: true,
+      enableLiveAutocompletion: true,
+      esversion: 8,
+      useSoftTabs: true,
+      tabSize: 2,
+    });
     this.editor = editor;
     this.element = el;
   }

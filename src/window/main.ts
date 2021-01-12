@@ -4,6 +4,7 @@ import { Console } from "../ui/console";
 import { Bar } from "../ui/dragBar";
 import { formatWithCursor as format } from "prettier";
 import { run } from "../libs/run";
+import { saveSketch, loadSketch } from "../libs/files";
 
 const main = document.getElementById("main");
 const [edit, bar, consol] = [
@@ -13,6 +14,10 @@ const [edit, bar, consol] = [
 ];
 
 bar.element.style.gridArea = "resize";
+
+edit.editor.session.on("change", () =>
+  saveSketch(edit.editor.session.getValue())
+);
 
 edit.listen("save", "ctrl-s", (editor) => {
   console.log("saving", editor.session.getValue());
@@ -49,3 +54,5 @@ ipcRenderer.on("runCode", (e) => {
   const res = run(edit.editor.session.getValue());
   consol.log(res);
 });
+
+edit.editor.session.doc.setValue(loadSketch(), -1);

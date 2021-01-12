@@ -2,7 +2,7 @@
   "name": "jside",
   "productName": "jside",
   "version": "1.0.0",
-  "description": "My Electron application description",
+  "description": "a simple and small ide for trying out ideas",
   "main": "dist/index.js",
   "scripts": {
     "prestart": "npm run build",

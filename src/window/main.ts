@@ -3,7 +3,7 @@ import { Editor } from "../ui/editor";
 import { Console } from "../ui/console";
 import { Bar } from "../ui/dragBar";
 import { formatWithCursor as format } from "prettier";
-import { run } from "../libs/run";
+import { run, runLess } from "../libs/run";
 import * as files from "../libs/files";
 import { basename } from "path";
 
@@ -76,9 +76,18 @@ bar.dragged = function (e) {
   edit.editor.resize();
 };
 
+consol.run = (code) => {
+  const res = runLess(code);
+  consol.log(res);
+};
+
 ipcRenderer.on("runCode", () => {
   const res = run(edit.editor.session.getValue());
   consol.log(res);
+});
+
+ipcRenderer.on("clearConsole", () => {
+  consol.clear();
 });
 
 function updateTitle(): void {

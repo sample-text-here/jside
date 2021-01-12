@@ -1,20 +1,41 @@
 .console {
   padding: 0.5em;
-  overflow-y: auto;
+  overflow-y: hidden;
   position: relative;
-}
-
-.input {
-  position: absolute;
-  bottom: 0;
-  left: 0;
+  display: grid;
+  grid-template-rows: 1fr 3px 3em;
 }
 
 .input,
-.display {
+.display,
+.highlighted {
   padding: 0.5em;
 }
 
+.content {
+  overflow: auto;
+}
+
+.input > div {
+  height: 100%;
+  width: 100%;
+}
+
+.highlighted::before {
+  content: "\203a";
+  color: var(--accent);
+  font-weight: bold;
+  position: absolute;
+  left: -1em;
+  top: 0;
+}
+
+.highlighted {
+  border: none;
+  position: relative;
+}
+
+.highlighted:not(:last-child),
 .display:not(:last-child) {
   border-bottom: solid var(--foreground) 1px;
 }

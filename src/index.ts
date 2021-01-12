@@ -27,14 +27,19 @@ const createWindow = (): void => {
   });
 
   win.webContents.on("before-input-event", (e, input) => {
-    if (
-      (input.control || input.meta) &&
-      input.key === "Enter" &&
-      !input.shift &&
-      !input.alt
-    ) {
-      win.webContents.send("runCode");
-      e.preventDefault();
+    switch (input.key) {
+      case "Enter":
+        if ((input.control || input.meta) && !input.shift && !input.alt) {
+          win.webContents.send("runCode");
+          e.preventDefault();
+        }
+        break;
+      case "l":
+        if ((input.control || input.meta) && !input.shift && !input.alt) {
+          win.webContents.send("clearConsole");
+          e.preventDefault();
+        }
+        break;
     }
   });
 };

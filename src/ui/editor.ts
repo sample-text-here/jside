@@ -12,7 +12,7 @@ langTools.setCompleters([langTools.textCompleter]);
 export class Editor extends Element {
   editor;
 
-  constructor(parent: HTMLElement ) {
+  constructor(parent: HTMLElement) {
     super();
 
     // create element

@@ -20,7 +20,11 @@ export class Console extends Element {
     this.content = content;
   }
 
-  log(obj) {
+  onInput(func: Function): void {
+    func();
+  }
+
+  log(obj): void {
     this.content.append(display(obj));
   }
 }

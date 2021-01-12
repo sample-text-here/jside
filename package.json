@@ -18,29 +18,34 @@
   "license": "MIT",
   "config": {
     "forge": {
-      "packagerConfig": {},
-      "makers": [
-        {
-          "name": "@electron-forge/maker-squirrel",
-          "config": {
-            "name": "jside"
-          }
-        },
-        {
-          "name": "@electron-forge/maker-zip",
-          "platforms": [
-            "darwin"
-          ]
-        },
-        {
-          "name": "@electron-forge/maker-deb",
-          "config": {}
-        },
-        {
-          "name": "@electron-forge/maker-rpm",
-          "config": {}
-        }
-      ]
+      "make_targets": {
+        "win32": [
+          "squirrel"
+        ],
+        "darwin": [
+          "zip"
+        ],
+        "linux": [
+          "deb",
+          "rpm"
+        ]
+      },
+      "electronPackagerConfig": {
+        "packageManager": "npm"
+      },
+      "electronWinstallerConfig": {
+        "name": "jside"
+      },
+      "electronInstallerDebian": {},
+      "electronInstallerRedhat": {},
+      "github_repository": {
+        "owner": "",
+        "name": ""
+      },
+      "windowsStoreConfig": {
+        "packageName": "",
+        "name": "jside"
+      }
     }
   },
   "devDependencies": {
@@ -51,9 +56,14 @@
     "@electron-forge/maker-zip": "^6.0.0-beta.54",
     "@types/ace": "0.0.44",
     "@types/ncp": "^2.0.4",
+    "@types/node": "^12.19.12",
     "@typescript-eslint/eslint-plugin": "^2.34.0",
     "@typescript-eslint/parser": "^2.34.0",
-    "electron": "11.1.1",
+    "babel-plugin-transform-async-to-generator": "^6.24.1",
+    "babel-preset-env": "^1.7.0",
+    "babel-preset-react": "^6.24.1",
+    "electron-forge": "^5.2.4",
+    "electron-prebuilt-compile": "8.2.0",
     "eslint": "^7.17.0",
     "eslint-plugin-import": "^2.22.1",
     "ncp": "^2.0.0",
@@ -61,6 +71,7 @@
   },
   "dependencies": {
     "ace-builds": "^1.4.12",
+    "electron-compile": "^6.4.4",
     "electron-squirrel-startup": "^1.0.0",
     "prettier": "^2.2.1",
     "vm2": "^3.9.2"

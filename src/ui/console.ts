@@ -1,6 +1,7 @@
 import { Element } from "./index";
 import { create } from "../libs/elements";
 import { display } from "./inspect";
+import { Editor } from "./editor";
 
 export class Console extends Element {
   content: HTMLElement;

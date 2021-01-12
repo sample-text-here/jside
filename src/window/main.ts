@@ -76,12 +76,12 @@ bar.dragged = function (e) {
   edit.editor.resize();
 };
 
-ipcRenderer.on("runCode", (e) => {
+ipcRenderer.on("runCode", () => {
   const res = run(edit.editor.session.getValue());
   consol.log(res);
 });
 
-function updateTitle() {
+function updateTitle(): void {
   if (filePath) {
     document.title = "jside - " + basename(filePath) + (updated ? "*" : "");
   } else {

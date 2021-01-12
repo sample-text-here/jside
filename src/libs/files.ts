@@ -9,23 +9,23 @@ if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 if (!fs.existsSync(filesDir)) fs.mkdirSync(filesDir, { recursive: true });
 if (!fs.existsSync(sketchPath)) fs.writeFileSync(sketchPath, "");
 
-export function saveSketch(value) {
+export function saveSketch(value): void {
   fs.writeFileSync(sketchPath, value);
 }
 
-export function loadSketch() {
+export function loadSketch(): string {
   return fs.readFileSync(sketchPath, "utf8");
 }
 
-export function saveFile(path, value) {
+export function saveFile(path, value): void {
   fs.writeFileSync(path, value);
 }
 
-export function openFile(path) {
+export function openFile(path): string {
   return fs.readFileSync(path, "utf8");
 }
 
-export function fileOpen() {
+export function fileOpen(): string[] {
   return remote.dialog.showOpenDialogSync({
     title: "open file",
     properties: ["openFile"],
@@ -34,7 +34,7 @@ export function fileOpen() {
   });
 }
 
-export function fileSave() {
+export function fileSave(): string {
   return remote.dialog.showSaveDialogSync({
     title: "save file",
     filters: [{ name: "js", extensions: ["js"] }],

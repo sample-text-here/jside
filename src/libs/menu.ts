@@ -40,7 +40,16 @@ export function generateMenu(win: BrowserWindow): Menu {
       label: "recent",
       id: "recent",
       type: "submenu",
-      submenu: [], // TODO add recent items
+      submenu: [],
+    })
+  );
+  files.push(
+    new MenuItem({
+      label: "reopen file",
+      accelerator: "CommandOrControl+shift+o",
+      click() {
+        call("reopen");
+      },
     })
   );
   files.push(new MenuItem({ type: "separator" }));
@@ -69,7 +78,6 @@ export function generateMenu(win: BrowserWindow): Menu {
     new MenuItem({
       label: "zlib",
       id: "perm-zlib",
-
       type: "checkbox",
       checked: false,
       click: perm,
@@ -79,7 +87,6 @@ export function generateMenu(win: BrowserWindow): Menu {
     new MenuItem({
       label: "http",
       id: "perm-http",
-
       type: "checkbox",
       checked: false,
       click: perm,
@@ -89,7 +96,6 @@ export function generateMenu(win: BrowserWindow): Menu {
     new MenuItem({
       label: "https",
       id: "perm-https",
-
       type: "checkbox",
       checked: false,
       click: perm,

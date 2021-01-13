@@ -28,6 +28,11 @@ edit.editor.session.on("change", () => {
   updateTitle();
 });
 
+edit.editor.commands.addCommand({
+  name: "undo",
+  bindKey: { win: "ctrl+shift+z", mac: "cmd+shift+z" },
+});
+
 function save() {
   if (!filePath) filePath = files.fileSave();
   if (!filePath) return;
@@ -44,16 +49,25 @@ function saveAs() {
   files.saveFile(filePath, edit.editor.session.getValue());
 }
 
-function open() {
-  if (updated && filePath && !window.confirm("your file isnt saved, continue?"))
-    return;
+function open(): void {
+  if (updated && !window.confirm("your file isnt saved, continue?")) return;
   filePath = files.fileOpen()[0];
+  openPath(filePath, true);
+}
+
+function openPath(filePath: string, force = false): void {
   if (!filePath) return;
+  if (updated && !force && !window.confirm("your file isnt saved, continue?"))
+    return;
   queueMicrotask(() => {
     updated = false;
     updateTitle();
   });
   edit.editor.session.setValue(files.openFile(filePath));
+}
+
+function reopen(): void {
+  openPath(files.lastPath());
 }
 
 function format() {
@@ -111,11 +125,20 @@ ipcRenderer.on("menu", (e, message) => {
     case "clear":
       consol.clear();
       break;
+    case "reopen":
+      reopen();
+      break;
   }
-  if (message.substr(0, 5) === "perm-") {
+
+  if (/^perm\-/.test(message)) {
     const [type, toggle] = message.substr(5).split("-");
     vm.setPerm(type, toggle === "on" ? true : false);
+    return;
   }
+});
+
+ipcRenderer.on("openRecent", (e, path) => {
+  openPath(path);
 });
 
 function updateTitle(): void {

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>help me plz</title>
+    <link href="index.css" type="text/css" rel="stylesheet" />
+    <link href="help.css" type="text/css" rel="stylesheet" />
+    <link href="scrollbar.css" type="text/css" rel="stylesheet" />
+  </head>
+  <body>
+    <h1>how 2 use jside</h1>
+    <p>
+      there's a left side and a right side. the left side is a code editor, the
+      right side is a console
+    </p>
+    <p>
+      if you drag a bar all the way to one side, it will autohide. dont worry,
+      its still there
+    </p>
+    <p>
+      press <code>ctrl + enter</code> to run the code you wrote. you need a
+      <code>return</code> or something with console if you want something to
+      show
+    </p>
+    <p>
+      you can use some built in nodejs modules, such as <code>fs</code> or
+      <code>http</code>. enable them in the permissions menu.
+    </p>
+    <p>your code autosaves, so dont worry if you close it by accident</p>
+    <p>here are some keyboard shortcuts if u want:</p>
+    <ul>
+      <li><code>ctrl + s</code> save file</li>
+      <li><code>ctrl + shift + s</code> save as</li>
+      <li><code>ctrl + o</code> open file</li>
+      <li><code>ctrl + shift + o</code> reopen file</li>
+      <li><code>ctrl + alt + s</code> format code</li>
+      <li><code>ctrl + l</code> clear console</li>
+      <li><code>ctrl + z/y/c/v/x</code> what do you think</li>
+    </ul>
+    <br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br />
+    <p>why are you still here go away</p>
+    <script>
+      window.addEventListener("keydown", (e) => {
+        if (e.ctrlKey && e.key === "q") window.close();
+      });
+    </script>
+  </body>
+</html>

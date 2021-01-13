@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu } from "electron";
+import { app, BrowserWindow, Menu, ipcMain, MenuItem } from "electron";
 import { generateMenu } from "./libs/menu";
 import * as path from "path";
 
@@ -45,8 +45,49 @@ const createWindow = (): void => {
     }
   });
 
-  Menu.setApplicationMenu(generateMenu(win));
+  const menu = generateMenu(win);
+  menu.append(
+    new MenuItem({
+      label: "help",
+      role: "help",
+      click: () => showHelp(win),
+    })
+  );
+
+  Menu.setApplicationMenu(menu);
+
+  ipcMain.on("updateRecent", (e, files) => {
+    const recent = menu.getMenuItemById("recent");
+    for (let i = 0; i < recent.submenu.items.length; i++)
+      recent.submenu.items[i].visible = false;
+    recent.submenu.items = [];
+    for (const file of files) {
+      recent.submenu.append(
+        new MenuItem({
+          label: path.basename(file),
+          click: () => win.webContents.send("openRecent", path),
+        })
+      );
+    }
+  });
 };
+
+function showHelp(parent) {
+  const help = new BrowserWindow({
+    height: 350,
+    width: 350,
+    show: false,
+    parent,
+    modal: true,
+  });
+
+  help.loadFile(path.join(__dirname, "window/help.html"));
+  help.setMenu(null);
+
+  help.once("ready-to-show", () => {
+    help.show();
+  });
+}
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.

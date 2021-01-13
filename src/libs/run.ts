@@ -57,7 +57,7 @@ export function setConsole(newConsole): void {
 }
 
 // set the node require root
-// TODO: fix
+// TODO: fix (require root)
 // export function setRoot(root: string): void {
 //   nodevm.require.root = root;
 // }

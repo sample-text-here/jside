@@ -13,6 +13,13 @@ function gotoEnd(editor) {
   editor.selection.moveTo(row + 1, column);
 }
 
+function queueScroll(el) {
+  const atBottom = el.scrollHeight - el.clientHeight <= el.scrollTop + 5;
+  queueMicrotask(() => {
+    if (atBottom) el.scrollTop = el.scrollHeight;
+  });
+}
+
 export class Console extends Element {
   content: HTMLElement;
   bar: Bar;
@@ -39,7 +46,7 @@ export class Console extends Element {
       enableBasicAutocompletion: false,
       enableSnippets: false,
       enableLiveAutocompletion: false,
-      minLines: 3,
+      minLines: 2,
       maxLines: 3,
       showGutter: false,
       highlightActiveLine: false,
@@ -52,12 +59,19 @@ export class Console extends Element {
       // need icon for console input, console
       // output, and code ran from editor
       // also a icon in front of console editor
+
+      const atBottom =
+        wrap.scrollHeight - wrap.clientHeight <= wrap.scrollTop + 5;
       const code = this.input.editor.session.getValue();
       new Highlight(content, code);
       if (this.run) this.run(code);
-      history.unshift(code);
+      if (code !== history[0] && code.length > 0) history.unshift(code);
       histIndex = -1;
       this.input.editor.session.setValue("");
+
+      setTimeout(() => {
+        if (atBottom) wrap.scrollTop = 1e10;
+      });
     });
     this.input.listen("prevHist", "up", () => {
       histIndex++;
@@ -91,17 +105,20 @@ export class Console extends Element {
   }
 
   log(obj): void {
+    queueScroll(this.content.parentNode);
     const disp = display(obj);
     this.content.append(disp);
   }
 
   warn(obj): void {
+    queueScroll(this.content.parentNode);
     const disp = display(obj);
     disp.classList.add("warn");
     this.content.append(disp);
   }
 
   error(obj): void {
+    queueScroll(this.content.parentNode);
     const disp = display(obj);
     disp.classList.add("error");
     this.content.append(disp);

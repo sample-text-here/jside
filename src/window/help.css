@@ -1,0 +1,22 @@
+body {
+  padding: 2em;
+  line-height: 1.4em;
+  overflow-y: auto;
+}
+
+p {
+  padding-top: 1em;
+}
+
+h1 {
+  margin-bottom: 1.5rem;
+}
+
+code {
+  white-space: no-wrap;
+  font-family: inherit;
+  font-size: calc(1em - 2px);
+  padding: 2px;
+  background: var(--selection);
+  border-radius: 2px;
+}

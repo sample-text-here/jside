@@ -37,11 +37,11 @@
 }
 
 .display.warn {
-  background: #ffff0033;
+  background: #e6e15533;
 }
 
 .display.error {
-  background: #ff000033;
+  background: #ed584533;
 }
 
 .display div:not(.expand) {
@@ -99,5 +99,5 @@
 }
 
 .display .error {
-  color: #d43;
+  color: #ff6225;
 }

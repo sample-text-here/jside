@@ -58,8 +58,8 @@ export function generateMenu(win: BrowserWindow): Menu {
   }
   perms.push(
     new MenuItem({
-      label: "fs & path",
-      id: "perm-fs",
+      label: "fs + path",
+      id: "perm-fs/path",
       type: "checkbox",
       checked: false,
       click: perm,

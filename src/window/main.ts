@@ -87,7 +87,7 @@ vm.setConsole(consol);
 
 consol.run = (code) => {
   const res = vm.runLess(code);
-  consol.log(res);
+  consol[res.err ? "error" : "log"](res.value);
 };
 
 ipcRenderer.on("menu", (e, message) => {
@@ -105,7 +105,8 @@ ipcRenderer.on("menu", (e, message) => {
       format();
       break;
     case "run":
-      consol.log(vm.run(edit.editor.session.getValue()));
+      const res = vm.run(edit.editor.session.getValue());
+      consol[res.err ? "error" : "log"](res.value);
       break;
     case "clear":
       consol.clear();

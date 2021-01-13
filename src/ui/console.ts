@@ -7,6 +7,12 @@ import { Editor } from "./editor";
 import { Bar } from "./dragBar";
 import { Highlight } from "./highlight";
 
+function gotoEnd(editor) {
+  var row = editor.session.getLength() - 1;
+  var column = Infinity;
+  editor.selection.moveTo(row + 1, column);
+}
+
 export class Console extends Element {
   content: HTMLElement;
   bar: Bar;
@@ -38,6 +44,9 @@ export class Console extends Element {
       showGutter: false,
       highlightActiveLine: false,
     });
+
+    const history: Array<string> = [];
+    let histIndex: number = -1;
     this.input.listen("runCode", "enter", () => {
       // TODO console icons, see more below
       // need icon for console input, console
@@ -46,13 +55,32 @@ export class Console extends Element {
       const code = this.input.editor.session.getValue();
       new Highlight(content, code);
       if (this.run) this.run(code);
+      history.unshift(code);
+      histIndex = -1;
       this.input.editor.session.setValue("");
+    });
+    this.input.listen("prevHist", "up", () => {
+      histIndex++;
+      if (histIndex >= history.length) histIndex = history.length - 1;
+      if (history.length > 0)
+        this.input.editor.session.setValue(history[histIndex]);
+      gotoEnd(this.input.editor);
+    });
+    this.input.listen("nextHist", "down", () => {
+      histIndex--;
+      if (histIndex < -1) histIndex = -1;
+      if (histIndex >= 0 && history.length > 0) {
+        this.input.editor.session.setValue(history[histIndex]);
+      } else {
+        this.input.editor.session.setValue("");
+      }
+      gotoEnd(this.input.editor);
     });
 
     bar.dragged = function (e) {
       const barHeight = 3,
         minY = barHeight,
-        maxY = window.innerHeight;
+        maxY = window.innerHeight - 3;
       let newY = e.clientY;
       if (newY < minY) newY = minY;
       if (newY > maxY) newY = maxY;

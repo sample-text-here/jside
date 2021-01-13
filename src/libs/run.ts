@@ -1,16 +1,19 @@
 // runs arbitrary code in a sandbox
 
 // TODO share context between vms
-import { NodeVM, VM } from "vm2";
+import { NodeVM, VM, NodeVMOptions, VMScript } from "vm2";
 let consol;
 const sandbox = {};
 const vmLibrary: Record<string, NodeVM> = {};
 const perms: Record<string, boolean> = {
   fs: false,
+  path: false,
+  zlib: false,
+  http: false,
+  https: false,
+  os: false,
 };
 const vm = new VM({ sandbox, timeout: 3000 });
-
-// TODO permissions
 
 // resets the vm sandbox
 export function reset(): void {
@@ -19,22 +22,32 @@ export function reset(): void {
   }
 }
 
+interface VMResult {
+  value: unknown;
+  err: boolean;
+}
+
 // run code as a nodejs vm
-export function run(code: string): unknown {
+export function run(code: string, fileName: string = "yourCode.js"): VMResult {
   try {
-    // TODO make console.log work
-    return getVm(permArray()).run(code);
+    return {
+      value: getVm(permArray()).run(new VMScript(code, fileName)),
+      err: false,
+    };
   } catch (err) {
-    return err;
+    return { value: err, err: true };
   }
 }
 
 // run code in a less fancy vm, for the console
-export function runLess(code: string): unknown {
+export function runLess(code: string): VMResult {
   try {
-    return vm.run(code);
+    return {
+      value: vm.run(code),
+      err: false,
+    };
   } catch (err) {
-    return err;
+    return { value: err, err: true };
   }
 }
 
@@ -51,7 +64,9 @@ export function setConsole(newConsole): void {
 
 // sets a permission
 export function setPerm(name: string, toggle: boolean): void {
-  if (perms.hasOwnProperty(name)) perms[name] = toggle;
+  name.split("/").forEach((i) => {
+    if (perms.hasOwnProperty(i)) perms[i] = toggle;
+  });
 }
 
 // convert permission object into an array
@@ -64,29 +79,36 @@ function permArray(): Array<string> {
 }
 
 // because vm2
-function getVm(perms: Array<string>) {
-  const name: string = perms.sort().join(",");
-  if (vmLibrary.hasOwnProperty(name)) return vmLibrary[name];
-  const nodevm = new NodeVM({
-    sandbox,
-    require: {
-      external: false,
-      builtin: perms,
+function getVm(perms: Array<string>, obj: object = {}) {
+  const options = Object.assign(
+    {
+      sandbox,
+      require: {
+        external: false,
+        builtin: perms,
+      },
+      wrapper: "none",
+      console: "redirect",
     },
-    wrapper: "none",
-    console: "redirect",
-  })
-    .on("console.log", (msg) => {
-      if (consol) consol.log(msg);
+    obj
+  ) as NodeVMOptions;
+
+  // lazy way of getting a unique name
+  const name: string = perms.sort().join(",") + JSON.stringify(obj);
+  if (vmLibrary.hasOwnProperty(name)) return vmLibrary[name];
+
+  const nodevm = new NodeVM(options)
+    .on("console.log", (...msg) => {
+      if (consol) msg.forEach((i) => consol.log(i));
     })
-    .on("console.info", (msg) => {
-      if (consol) consol.log(msg);
+    .on("console.info", (...msg) => {
+      if (consol) msg.forEach((i) => consol.log(i));
     })
-    .on("console.warn", (msg) => {
-      if (consol) consol.warn(msg);
+    .on("console.warn", (...msg) => {
+      if (consol) msg.forEach((i) => consol.warn(i));
     })
-    .on("console.error", (msg) => {
-      if (consol) consol.error(msg);
+    .on("console.error", (...msg) => {
+      if (consol) msg.forEach((i) => consol.error(i));
     });
   vmLibrary[name] = nodevm;
   return nodevm;

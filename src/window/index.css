@@ -6,6 +6,10 @@
   padding: 0;
 }
 
+::selection {
+  background: var(--selection);
+}
+
 body {
   font: 12px / normal "Monaco", "Menlo", "Ubuntu Mono", "Consolas",
     "source-code-pro", monospace;

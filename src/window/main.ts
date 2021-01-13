@@ -1,11 +1,14 @@
+// the main part of the ide
+
 import { ipcRenderer } from "electron";
 import { Editor } from "../ui/editor";
 import { Console } from "../ui/console";
 import { Bar } from "../ui/dragBar";
 import { formatWithCursor } from "prettier";
-import { run, runLess } from "../libs/run";
+import * as vm from "../libs/run";
 import * as files from "../libs/files";
 import { basename } from "path";
+const permissions: Record<string, boolean> = {};
 
 const main = document.getElementById("main");
 const [edit, bar, consol] = [
@@ -80,13 +83,14 @@ bar.dragged = function (e) {
   edit.editor.resize();
 };
 
+vm.setConsole(consol);
+
 consol.run = (code) => {
-  const res = runLess(code);
+  const res = vm.runLess(code);
   consol.log(res);
 };
 
 ipcRenderer.on("menu", (e, message) => {
-  console.log(message);
   switch (message) {
     case "save":
       save();
@@ -101,11 +105,15 @@ ipcRenderer.on("menu", (e, message) => {
       format();
       break;
     case "run":
-      consol.log(run(edit.editor.session.getValue()));
+      consol.log(vm.run(edit.editor.session.getValue()));
       break;
     case "clear":
       consol.clear();
       break;
+  }
+  if (message.substr(0, 5) === "perm-") {
+    const [type, toggle] = message.substr(5).split("-");
+    vm.setPerm(type, toggle === "on" ? true : false);
   }
 });
 

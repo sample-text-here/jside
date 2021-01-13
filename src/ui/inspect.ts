@@ -1,3 +1,5 @@
+// generates an interactive thing display from (almost) anything in js
+
 import { create, clear } from "../libs/elements";
 
 function select(el: HTMLElement): void {
@@ -12,6 +14,7 @@ function select(el: HTMLElement): void {
   selection.addRange(range);
 }
 
+// TODO preview first few array items
 function displayArray(arr: Array<unknown>): HTMLElement {
   let expanded = false;
   const body = create("div", ["expand", "canExpand"]);
@@ -53,6 +56,7 @@ function displayArray(arr: Array<unknown>): HTMLElement {
   return body;
 }
 
+// TODO object preview
 function displayObject(obj): HTMLElement {
   let expanded = false;
   const body = create("div", ["expand", "canExpand"]);
@@ -90,6 +94,7 @@ function displayObject(obj): HTMLElement {
   return body;
 }
 
+// TODO better function display
 function displayFunction(func: Function): HTMLElement {
   const str = func.toString();
   const preview = str.length < 35 ? str : str.slice(0, 33) + "...";
@@ -107,6 +112,7 @@ function displayPart(thing): HTMLElement {
     return create("div", ["value", "undefined"], "undefined");
   switch (typeof thing) {
     case "string":
+      // TODO trim string if its too long
       return create("div", ["value", "string"], `"${thing}"`);
       break;
     case "number":

@@ -1,3 +1,5 @@
+// creates a console
+
 import { Element } from "./index";
 import { create, clear } from "../libs/elements";
 import { display } from "./inspect";
@@ -37,15 +39,20 @@ export class Console extends Element {
       highlightActiveLine: false,
     });
     this.input.listen("runCode", "enter", () => {
+      // TODO console icons, see more below
+      // need icon for console input, console
+      // output, and code ran from editor
+      // also a icon in front of console editor
       const code = this.input.editor.session.getValue();
       new Highlight(content, code);
       if (this.run) this.run(code);
       this.input.editor.session.setValue("");
     });
+
     bar.dragged = function (e) {
       const barHeight = 3,
-        minY = 0,
-        maxY = window.innerHeight - barHeight;
+        minY = barHeight,
+        maxY = window.innerHeight;
       let newY = e.clientY;
       if (newY < minY) newY = minY;
       if (newY > maxY) newY = maxY;
@@ -56,7 +63,20 @@ export class Console extends Element {
   }
 
   log(obj): void {
-    this.content.append(display(obj));
+    const disp = display(obj);
+    this.content.append(disp);
+  }
+
+  warn(obj): void {
+    const disp = display(obj);
+    disp.classList.add("warn");
+    this.content.append(disp);
+  }
+
+  error(obj): void {
+    const disp = display(obj);
+    disp.classList.add("error");
+    this.content.append(disp);
   }
 
   clear(): void {

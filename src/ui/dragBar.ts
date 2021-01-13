@@ -1,3 +1,5 @@
+// creates part of a draggable bar
+
 import { Element } from "./index";
 import { create } from "../libs/elements";
 

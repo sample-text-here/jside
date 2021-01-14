@@ -50,7 +50,7 @@ const createWindow = (): void => {
     new MenuItem({
       label: "help",
       role: "help",
-      click: () => showHelp(win),
+      click: (): void => showHelp(win),
     })
   );
 
@@ -65,14 +65,14 @@ const createWindow = (): void => {
       recent.submenu.append(
         new MenuItem({
           label: path.basename(file),
-          click: () => win.webContents.send("openRecent", file),
+          click: (): void => win.webContents.send("openRecent", file),
         })
       );
     }
   });
 };
 
-function showHelp(parent) {
+function showHelp(parent): void {
   const help = new BrowserWindow({
     height: 350,
     width: 350,

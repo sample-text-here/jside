@@ -8,15 +8,23 @@ import { Bar } from "./dragBar";
 import { Highlight } from "./highlight";
 
 function gotoEnd(editor) {
-  var row = editor.session.getLength() - 1;
-  var column = Infinity;
+  const row = editor.session.getLength() - 1;
+  const column = Infinity;
   editor.selection.moveTo(row + 1, column);
 }
 
-function queueScroll(el) {
-  const atBottom = el.scrollHeight - el.clientHeight <= el.scrollTop + 5;
+function queueScroll(el): void {
+  const atBottom = el.scrollHeight - el.clientHeight <= el.scrollTop + 1;
   queueMicrotask(() => {
-    if (atBottom) el.scrollTop = el.scrollHeight;
+    window.requestAnimationFrame(() => {
+      if (atBottom) {
+        el.scrollTo({
+          left: 0,
+          top: 1e10,
+          behavior: "smooth",
+        });
+      }
+    });
   });
 }
 
@@ -28,12 +36,10 @@ export class Console extends Element {
   constructor(parent: HTMLElement) {
     super();
     const main = create("div", ["console"]);
-    const content = create("div");
-    const wrap = create("div", ["content"]);
+    const content = create("div", ["content"]);
     const input = create("div", ["input"]);
     main.style.gridArea = "console";
-    wrap.append(content);
-    main.append(wrap);
+    main.append(content);
     const bar = new Bar(main, "upDown");
     main.append(input);
     parent.append(main);
@@ -54,14 +60,15 @@ export class Console extends Element {
 
     const history: Array<string> = [];
     let histIndex: number = -1;
+    let currentCode: string = "";
     this.input.listen("runCode", "enter", () => {
       // TODO console icons, see more below
       // need icon for console input, console
       // output, and code ran from editor
       // also a icon in front of console editor
 
-      const atBottom =
-        wrap.scrollHeight - wrap.clientHeight <= wrap.scrollTop + 5;
+      queueScroll(content);
+
       const code = this.input.editor.session.getValue();
 
       new Highlight(content, code);
@@ -69,17 +76,16 @@ export class Console extends Element {
       if (code !== history[0] && code.length > 0) history.unshift(code);
       histIndex = -1;
       this.input.editor.session.setValue("");
-
-      setTimeout(() => {
-        if (atBottom) wrap.scrollTop = 1e10;
-      });
+      currentCode = "";
     });
 
     this.input.listen("prevHist", "up", () => {
+      if (histIndex === -1) currentCode = this.input.editor.session.getValue();
       histIndex++;
       if (histIndex >= history.length) histIndex = history.length - 1;
-      if (history.length > 0)
+      if (history.length > 0) {
         this.input.editor.session.setValue(history[histIndex]);
+      }
       gotoEnd(this.input.editor);
     });
 
@@ -89,7 +95,7 @@ export class Console extends Element {
       if (histIndex >= 0 && history.length > 0) {
         this.input.editor.session.setValue(history[histIndex]);
       } else {
-        this.input.editor.session.setValue("");
+        this.input.editor.session.setValue(currentCode);
       }
       gotoEnd(this.input.editor);
     });
@@ -109,20 +115,20 @@ export class Console extends Element {
   }
 
   log(obj): void {
-    queueScroll(this.content.parentNode);
+    queueScroll(this.content);
     const disp = display(obj);
     this.content.append(disp);
   }
 
   warn(obj): void {
-    queueScroll(this.content.parentNode);
+    queueScroll(this.content);
     const disp = display(obj);
     disp.classList.add("warn");
     this.content.append(disp);
   }
 
   error(obj): void {
-    queueScroll(this.content.parentNode);
+    queueScroll(this.content);
     const disp = display(obj);
     disp.classList.add("error");
     this.content.append(disp);

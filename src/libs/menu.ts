@@ -11,7 +11,7 @@ export function generateMenu(win: BrowserWindow): Menu {
     new MenuItem({
       label: "open",
       accelerator: "CommandOrControl+o",
-      click() {
+      click(): void {
         call("open");
       },
     })
@@ -20,7 +20,7 @@ export function generateMenu(win: BrowserWindow): Menu {
     new MenuItem({
       label: "save",
       accelerator: "CommandOrControl+s",
-      click() {
+      click(): void {
         call("save");
       },
     })
@@ -29,7 +29,7 @@ export function generateMenu(win: BrowserWindow): Menu {
     new MenuItem({
       label: "save as",
       accelerator: "CommandOrControl+shift+s",
-      click() {
+      click(): void {
         call("saveAs");
       },
     })
@@ -47,7 +47,7 @@ export function generateMenu(win: BrowserWindow): Menu {
     new MenuItem({
       label: "reopen file",
       accelerator: "CommandOrControl+shift+o",
-      click() {
+      click(): void {
         call("reopen");
       },
     })
@@ -56,7 +56,7 @@ export function generateMenu(win: BrowserWindow): Menu {
     new MenuItem({
       label: "sketchpad",
       accelerator: "CommandOrControl+alt+o",
-      click() {
+      click(): void {
         call("sketch");
       },
     })
@@ -71,7 +71,7 @@ export function generateMenu(win: BrowserWindow): Menu {
   );
 
   const perms = [];
-  function perm(item) {
+  function perm(item): void {
     call(`perm-${item.id.split("-")[1]}-${item.checked ? "on" : "off"}`);
   }
   perms.push(
@@ -119,6 +119,24 @@ export function generateMenu(win: BrowserWindow): Menu {
       click: perm,
     })
   );
+  perms.push(
+    new MenuItem({
+      label: "events",
+      id: "perm-events",
+      type: "checkbox",
+      checked: false,
+      click: perm,
+    })
+  );
+  perms.push(
+    new MenuItem({
+      label: "crypto",
+      id: "perm-crypto",
+      type: "checkbox",
+      checked: false,
+      click: perm,
+    })
+  );
 
   const edit = [];
   edit.push(new MenuItem({ label: "undo", role: "undo" }));
@@ -133,7 +151,7 @@ export function generateMenu(win: BrowserWindow): Menu {
     new MenuItem({
       label: "format code",
       accelerator: "CommandOrControl+alt+s",
-      click() {
+      click(): void {
         call("format");
       },
     })
@@ -144,7 +162,7 @@ export function generateMenu(win: BrowserWindow): Menu {
     new MenuItem({
       label: "run",
       accelerator: "CommandOrControl+enter",
-      click() {
+      click(): void {
         call("run");
       },
     })
@@ -153,7 +171,7 @@ export function generateMenu(win: BrowserWindow): Menu {
     new MenuItem({
       label: "clear console",
       accelerator: "CommandOrControl+l",
-      click() {
+      click(): void {
         call("clear");
       },
     })

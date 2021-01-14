@@ -14,7 +14,8 @@
 }
 
 .content {
-  overflow: auto;
+  overflow-y: auto;
+  white-space: pre-wrap;
 }
 
 .input > div {
@@ -69,6 +70,18 @@
 .key,
 .value {
   user-select: all;
+}
+
+.key:focus,
+.value:focus {
+  animation: select 100ms step-end forwards;
+}
+
+@keyframes select {
+  to {
+    -webkit-user-select: text;
+    user-select: text;
+  }
 }
 
 .display .colon,

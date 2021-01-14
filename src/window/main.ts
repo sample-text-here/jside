@@ -8,7 +8,7 @@ import { formatWithCursor } from "prettier";
 import * as vm from "../libs/run";
 import * as files from "../libs/files";
 import { basename } from "path";
-const permissions: Record<string, boolean> = {};
+import * as ts from "../libs/compile";
 
 const main = document.getElementById("main");
 const [edit, bar, consol] = [
@@ -16,7 +16,12 @@ const [edit, bar, consol] = [
   new Bar(main, "leftRight"),
   new Console(main),
 ];
-
+declare global {
+  interface Window {
+    asdf: any;
+  }
+}
+window.asdf = edit;
 bar.element.style.gridArea = "resize";
 
 let filePath = null,
@@ -40,7 +45,7 @@ edit.editor.commands.addCommand({
   },
 });
 
-function save() {
+function save(): void {
   if (!filePath) filePath = files.fileSave();
   if (!filePath) return;
   updated = false;
@@ -48,7 +53,7 @@ function save() {
   files.saveFile(filePath, edit.editor.session.getValue());
 }
 
-function saveAs() {
+function saveAs(): void {
   filePath = files.fileSave();
   if (!filePath) return;
   updated = false;
@@ -95,7 +100,7 @@ function openSketch(): void {
   });
 }
 
-function format() {
+function format(): void {
   const editor = edit.editor;
   const cursor = editor.selection.getCursor();
   const index = editor.session.doc.positionToIndex(cursor);
@@ -110,7 +115,7 @@ function format() {
   editor.moveCursorToPosition(position);
 }
 
-bar.dragged = function (e) {
+bar.dragged = function (e): void {
   const barWidth = 3,
     minX = 0,
     maxX = window.innerWidth - barWidth;
@@ -126,7 +131,7 @@ bar.dragged = function (e) {
 
 vm.setConsole(consol);
 
-consol.run = (code) => {
+consol.run = (code): void => {
   const res = vm.runLess(code);
   consol[res.err ? "error" : "log"](res.value);
 };
@@ -160,7 +165,7 @@ ipcRenderer.on("menu", (e, message) => {
       break;
   }
 
-  if (/^perm\-/.test(message)) {
+  if (/^perm-/.test(message)) {
     const [type, toggle] = message.substr(5).split("-");
     vm.setPerm(type, toggle === "on" ? true : false);
     return;

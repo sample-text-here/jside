@@ -16,6 +16,7 @@ body {
   color: var(--foreground);
   background: var(--background);
   overflow: hidden;
+  scroll-behavior: smooth;
 }
 
 #main {

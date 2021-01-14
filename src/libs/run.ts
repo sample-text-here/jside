@@ -12,12 +12,14 @@ const perms: Record<string, boolean> = {
   http: false,
   https: false,
   os: false,
+  events: false,
+  crypto: false,
 };
 const vm = new VM({ sandbox, timeout: 3000 });
 
 // resets the vm sandbox
 export function reset(): void {
-  for (let i in sandbox) {
+  for (const i in sandbox) {
     delete sandbox[i];
   }
 }
@@ -28,7 +30,7 @@ interface VMResult {
 }
 
 // run code as a nodejs vm
-export function run(code: string, fileName: string = "yourCode.js"): VMResult {
+export function run(code: string, fileName = "yourCode.js"): VMResult {
   try {
     return {
       value: getVm(permArray()).run(new VMScript(code, fileName)),
@@ -65,7 +67,7 @@ export function setConsole(newConsole): void {
 // sets a permission
 export function setPerm(name: string, toggle: boolean): void {
   name.split("/").forEach((i) => {
-    if (perms.hasOwnProperty(i)) perms[i] = toggle;
+    if (Object.hasOwnProperty.call(perms, i)) perms[i] = toggle;
   });
 }
 
@@ -79,7 +81,7 @@ function permArray(): Array<string> {
 }
 
 // because vm2
-function getVm(perms: Array<string>, obj: object = {}) {
+function getVm(perms: Array<string>, obj: object = {}): NodeVM {
   const options = Object.assign(
     {
       sandbox,
@@ -95,7 +97,7 @@ function getVm(perms: Array<string>, obj: object = {}) {
 
   // lazy way of getting a unique name
   const name: string = perms.sort().join(",") + JSON.stringify(obj);
-  if (vmLibrary.hasOwnProperty(name)) return vmLibrary[name];
+  if (Object.hasOwnProperty.call(vmLibrary, name)) return vmLibrary[name];
 
   const nodevm = new NodeVM(options)
     .on("console.log", (...msg) => {

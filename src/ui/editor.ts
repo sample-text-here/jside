@@ -1,5 +1,7 @@
+// this is the main editor (left panel)
 import { Element } from "./index";
 import { create } from "../libs/elements";
+import { keywords } from "../libs/autocomplete";
 import * as ace from "ace-builds/src-noconflict/ace";
 import * as langTools from "ace-builds/src-noconflict/ext-language_tools";
 const acePath = "../../node_modules/ace-builds/src-noconflict";
@@ -7,7 +9,7 @@ ace.config.set("basePath", acePath);
 ace.config.set("modePath", acePath);
 ace.config.set("themePath", acePath);
 
-langTools.setCompleters([langTools.textCompleter]);
+langTools.setCompleters([langTools.textCompleter, keywords]);
 
 export class Editor extends Element {
   editor;

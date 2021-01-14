@@ -23,14 +23,21 @@ let filePath = null,
   updated = false;
 
 edit.editor.session.on("change", () => {
-  files.saveSketch(edit.editor.session.getValue());
+  if (filePath === null) {
+    files.saveSketch(edit.editor.session.getValue());
+  } else {
+    files.backup(edit.editor.session.getValue());
+  }
   updated = true;
   updateTitle();
 });
 
 edit.editor.commands.addCommand({
-  name: "undo",
+  name: "alsoRedo",
   bindKey: { win: "ctrl+shift+z", mac: "cmd+shift+z" },
+  exec(editor) {
+    editor.redo();
+  },
 });
 
 function save() {
@@ -50,24 +57,42 @@ function saveAs() {
 }
 
 function open(): void {
-  if (updated && !window.confirm("your file isnt saved, continue?")) return;
-  filePath = files.fileOpen()[0];
-  openPath(filePath, true);
+  if (updated && filePath && !window.confirm("your file isnt saved, continue?"))
+    return;
+  openPath((files.fileOpen() || [])[0], true);
 }
 
-function openPath(filePath: string, force = false): void {
-  if (!filePath) return;
-  if (updated && !force && !window.confirm("your file isnt saved, continue?"))
+function openPath(newPath: string, force = false): void {
+  if (!newPath) return;
+  if (
+    updated &&
+    filePath &&
+    !force &&
+    !window.confirm("your file isnt saved, continue?")
+  )
     return;
   queueMicrotask(() => {
     updated = false;
     updateTitle();
   });
-  edit.editor.session.setValue(files.openFile(filePath));
+  filePath = newPath;
+  edit.editor.session.setValue(files.openFile(newPath));
 }
 
 function reopen(): void {
-  openPath(files.lastPath());
+  const lastPath = files.lastPath();
+  if (lastPath) openPath(lastPath);
+}
+
+function openSketch(): void {
+  if (updated && filePath && !window.confirm("your file isnt saved, continue?"))
+    return;
+  filePath = null;
+  edit.editor.session.setValue(files.loadSketch());
+  queueMicrotask(() => {
+    updated = false;
+    updateTitle();
+  });
 }
 
 function format() {
@@ -81,6 +106,7 @@ function format() {
   });
   editor.session.doc.setValue(result.formatted);
   const position = editor.session.doc.indexToPosition(result.cursorOffset);
+  editor.clearSelection();
   editor.moveCursorToPosition(position);
 }
 
@@ -91,10 +117,11 @@ bar.dragged = function (e) {
   let newX = e.clientX;
   if (newX < minX) newX = minX;
   if (newX > maxX) newX = maxX;
-  main.style.gridTemplateColumns = `${newX}px ${barWidth}px 1fr`;
+  main.style.gridTemplateColumns = `${newX}px ${barWidth}px 2fr`;
   const atEdge = newX === minX || newX === maxX;
   bar.element.style.opacity = String(atEdge ? 0 : 1);
   edit.editor.resize();
+  consol.resize();
 };
 
 vm.setConsole(consol);
@@ -127,6 +154,9 @@ ipcRenderer.on("menu", (e, message) => {
       break;
     case "reopen":
       reopen();
+      break;
+    case "sketch":
+      openSketch();
       break;
   }
 

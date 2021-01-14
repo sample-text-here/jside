@@ -65,7 +65,7 @@ const createWindow = (): void => {
       recent.submenu.append(
         new MenuItem({
           label: path.basename(file),
-          click: () => win.webContents.send("openRecent", path),
+          click: () => win.webContents.send("openRecent", file),
         })
       );
     }

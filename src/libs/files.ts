@@ -4,6 +4,7 @@ import { remote, ipcRenderer } from "electron";
 const dataDir = remote.app.getPath("userData");
 const filesDir = join(dataDir, "files");
 const sketchPath = join(dataDir, "sketch.js");
+const defaultBackupPath = join(dataDir, "backup.js");
 const configPath = join(dataDir, "config.json");
 
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
@@ -13,38 +14,41 @@ if (!fs.existsSync(configPath)) fs.writeFileSync(configPath, "{}");
 
 interface Settings {
   recent: Array<string>;
-  flat: boolean;
-}
-let config = {} as Settings;
-try {
-  config = JSON.parse(fs.readFileSync(configPath, "utf8")) as Settings;
-} catch (err) {
-  fs.writeFileSync(configPath, "{}");
+  backup: string;
+  [x: string]: any;
 }
 
-function init(key, value) {
-  if (!(key in config)) config[key] = value;
-}
+let config: Settings = {
+  recent: [],
+  backup: defaultBackupPath,
+};
 
 function save() {
   fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
 }
 
-init("recent", []);
-save();
+try {
+  config = { ...config, ...JSON.parse(fs.readFileSync(configPath, "utf8")) };
+} catch (err) {
+  save();
+}
+
+if (!fs.existsSync(config.backup)) fs.writeFileSync(config.backup, "");
 ipcRenderer.send("updateRecent", config.recent);
 
-function recentFile(path) {
+function recentFile(path: string): void {
+  console.log(path);
   const maxItems = 10;
   config.recent = config.recent
     .filter((i) => i !== path)
     .slice(0, maxItems - 1);
   config.recent.unshift(path);
+  console.log(config.recent);
   ipcRenderer.send("updateRecent", config.recent);
   save();
 }
 
-export function saveSketch(value): void {
+export function saveSketch(value: string): void {
   fs.writeFileSync(sketchPath, value);
 }
 
@@ -52,16 +56,21 @@ export function loadSketch(): string {
   return fs.readFileSync(sketchPath, "utf8");
 }
 
+export function backup(file: string): void {
+  fs.writeFileSync(config.backup, file);
+}
+
 let samePath = false;
 
-export function saveFile(path, value): void {
+export function saveFile(path: string, value: string): void {
   fs.writeFileSync(path, value);
   if (!samePath) recentFile(path);
   samePath = true;
 }
 
-export function openFile(path): string {
+export function openFile(path: string): string {
   samePath = false;
+  console.log(path);
   recentFile(path);
   return fs.readFileSync(path, "utf8");
 }

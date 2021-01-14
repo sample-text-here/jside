@@ -63,6 +63,7 @@ export class Console extends Element {
       const atBottom =
         wrap.scrollHeight - wrap.clientHeight <= wrap.scrollTop + 5;
       const code = this.input.editor.session.getValue();
+
       new Highlight(content, code);
       if (this.run) this.run(code);
       if (code !== history[0] && code.length > 0) history.unshift(code);
@@ -73,6 +74,7 @@ export class Console extends Element {
         if (atBottom) wrap.scrollTop = 1e10;
       });
     });
+
     this.input.listen("prevHist", "up", () => {
       histIndex++;
       if (histIndex >= history.length) histIndex = history.length - 1;
@@ -80,6 +82,7 @@ export class Console extends Element {
         this.input.editor.session.setValue(history[histIndex]);
       gotoEnd(this.input.editor);
     });
+
     this.input.listen("nextHist", "down", () => {
       histIndex--;
       if (histIndex < -1) histIndex = -1;
@@ -91,7 +94,7 @@ export class Console extends Element {
       gotoEnd(this.input.editor);
     });
 
-    bar.dragged = function (e) {
+    bar.dragged = (e) => {
       const barHeight = 3,
         minY = barHeight,
         maxY = window.innerHeight - 3;
@@ -101,6 +104,7 @@ export class Console extends Element {
       main.style.gridTemplateRows = `${newY}px ${barHeight}px 1fr`;
       const atEdge = newY === minY || newY === maxY;
       bar.element.style.opacity = String(atEdge ? 0 : 1);
+      this.resize();
     };
   }
 
@@ -122,6 +126,10 @@ export class Console extends Element {
     const disp = display(obj);
     disp.classList.add("error");
     this.content.append(disp);
+  }
+
+  resize(): void {
+    this.input.editor.resize();
   }
 
   clear(): void {

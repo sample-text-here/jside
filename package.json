@@ -2,7 +2,7 @@
   "name": "jside",
   "productName": "jside",
   "version": "1.0.0",
-  "description": "a simple and small ide for trying out ideas",
+  "description": "idk what to put here",
   "main": "dist/index.js",
   "scripts": {
     "prestart": "npm run build",

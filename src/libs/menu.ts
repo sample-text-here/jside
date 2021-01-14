@@ -52,6 +52,15 @@ export function generateMenu(win: BrowserWindow): Menu {
       },
     })
   );
+  files.push(
+    new MenuItem({
+      label: "sketchpad",
+      accelerator: "CommandOrControl+alt+o",
+      click() {
+        call("sketch");
+      },
+    })
+  );
   files.push(new MenuItem({ type: "separator" }));
   files.push(
     new MenuItem({

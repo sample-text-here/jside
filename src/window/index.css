@@ -11,7 +11,7 @@
 }
 
 body {
-  font: 12px / normal "Monaco", "Menlo", "Ubuntu Mono", "Consolas",
+  font: 12px / normal "Monacso", "Menlo", "Ubuntu Mono", "Consolas",
     "source-code-pro", monospace;
   color: var(--foreground);
   background: var(--background);
@@ -27,7 +27,7 @@ body {
 
   display: grid;
   grid-template-areas: "editor resize console";
-  grid-template-columns: 1fr 3px 1fr;
+  grid-template-columns: 3fr 3px 2fr;
 }
 
 .bar {

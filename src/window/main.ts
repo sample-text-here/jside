@@ -37,14 +37,6 @@ edit.editor.session.on("change", () => {
   updateTitle();
 });
 
-edit.editor.commands.addCommand({
-  name: "alsoRedo",
-  bindKey: { win: "ctrl+shift+z", mac: "cmd+shift+z" },
-  exec(editor) {
-    editor.redo();
-  },
-});
-
 function save(): void {
   if (!filePath) filePath = files.fileSave();
   if (!filePath) return;
@@ -54,11 +46,11 @@ function save(): void {
 }
 
 function saveAs(): void {
-  filePath = files.fileSave();
+  const newPath = files.fileSave();
   if (!filePath) return;
   updated = false;
   updateTitle();
-  files.saveFile(filePath, edit.editor.session.getValue());
+  files.saveFile(newPath, edit.editor.session.getValue());
 }
 
 function open(): void {
@@ -113,6 +105,7 @@ function format(): void {
   const position = editor.session.doc.indexToPosition(result.cursorOffset);
   editor.clearSelection();
   editor.moveCursorToPosition(position);
+  updateTitle();
 }
 
 bar.dragged = function (e): void {
@@ -134,6 +127,7 @@ vm.setConsole(consol);
 consol.run = (code): void => {
   const res = vm.runLess(code);
   consol[res.err ? "error" : "log"](res.value);
+  updateTitle();
 };
 
 ipcRenderer.on("menu", (e, message) => {
@@ -163,6 +157,9 @@ ipcRenderer.on("menu", (e, message) => {
     case "sketch":
       openSketch();
       break;
+    case "showFile":
+      if (filePath) ipcRenderer.send("showFile", filePath);
+      break;
   }
 
   if (/^perm-/.test(message)) {
@@ -177,11 +174,11 @@ ipcRenderer.on("openRecent", (e, path) => {
 });
 
 function updateTitle(): void {
+  let title = "jside";
   if (filePath) {
-    document.title = "jside - " + basename(filePath) + (updated ? "*" : "");
-  } else {
-    document.title = "jside";
+    title += " - " + basename(filePath) + (updated ? "*" : "");
   }
+  document.title = title;
 }
 
 edit.editor.session.doc.setValue(files.loadSketch());

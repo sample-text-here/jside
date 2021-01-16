@@ -34,6 +34,15 @@ export function generateMenu(win: BrowserWindow): Menu {
       },
     })
   );
+  files.push(
+    new MenuItem({
+      label: "show file",
+      accelerator: "CommandOrControl+shift+e",
+      click(): void {
+        call("showFile");
+      },
+    })
+  );
   files.push(new MenuItem({ type: "separator" }));
   files.push(
     new MenuItem({

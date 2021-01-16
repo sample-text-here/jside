@@ -1,11 +1,13 @@
-import { app, BrowserWindow, Menu, ipcMain, MenuItem } from "electron";
+import { app, BrowserWindow, Menu, ipcMain, MenuItem, shell } from "electron";
 import { generateMenu } from "./libs/menu";
 import * as path from "path";
+import { existsSync } from "fs";
 
 const prevent = [
   { key: "enter", ctrl: true, shift: false, alt: false, message: "run" },
   { key: "l", ctrl: true, shift: false, alt: false, message: "clear" },
   { key: "s", ctrl: true, shift: false, alt: true, message: "format" },
+  { key: "e", ctrl: true, shift: true, alt: false, message: "showFile" },
 ];
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
@@ -70,6 +72,17 @@ const createWindow = (): void => {
       );
     }
   });
+
+  ipcMain.on("showFile", (e, file) => {
+    shell.showItemInFolder(file);
+  });
+
+  if (process.argv[3]) {
+    if (existsSync(process.argv[3])) {
+      // (ab)use openRecent
+      win.webContents.send("openRecent", process.argv[3]);
+    }
+  }
 };
 
 function showHelp(parent): void {

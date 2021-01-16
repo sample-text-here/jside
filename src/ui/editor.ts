@@ -8,6 +8,7 @@ const acePath = "../../node_modules/ace-builds/src-noconflict";
 ace.config.set("basePath", acePath);
 ace.config.set("modePath", acePath);
 ace.config.set("themePath", acePath);
+ace.config.set("modePath", acePath);
 
 langTools.setCompleters([langTools.textCompleter, keywords]);
 
@@ -28,15 +29,26 @@ export class Editor extends Element {
     editor.setTheme("ace/theme/monokai");
     editor.session.setMode("ace/mode/javascript");
     editor.setShowPrintMargin(false);
-    editor.setKeyboardHandler("ace/keyboard/vscode");
     editor.setOptions({
       enableBasicAutocompletion: true,
       enableSnippets: true,
       enableLiveAutocompletion: true,
-      esVersion: 8,
       useSoftTabs: true,
       tabSize: 2,
       newLineMode: "unix",
+      useWorker: true,
+    });
+    editor.session.on("change", () => {
+      if (editor.session.$worker)
+        editor.session.$worker.send("setOptions", [
+          {
+            esversion: 10,
+            unused: true,
+            varstmt: true,
+            debug: true,
+            node: true,
+          },
+        ]);
     });
     this.editor = editor;
     this.element = el;

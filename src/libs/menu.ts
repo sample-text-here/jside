@@ -1,7 +1,7 @@
 // keybinds/menu at the top of the window
 import { Menu, MenuItem, BrowserWindow } from "electron";
 
-export function generateMenu(win: BrowserWindow): Menu {
+export function generateMenu(win: BrowserWindow, options): Menu {
   function call(message: string): void {
     win.webContents.send("menu", message);
   }
@@ -193,7 +193,6 @@ export function generateMenu(win: BrowserWindow): Menu {
     new MenuItem({ label: "permissions", type: "submenu", submenu: perms })
   );
   menu.append(new MenuItem({ label: "code", type: "submenu", submenu: code }));
-  if (process.argv.includes("--dev"))
-    menu.append(new MenuItem({ role: "viewMenu" }));
+  if (options.dev) menu.append(new MenuItem({ role: "viewMenu" }));
   return menu;
 }

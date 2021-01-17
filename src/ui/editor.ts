@@ -37,6 +37,7 @@ export class Editor extends Element {
       tabSize: 2,
       newLineMode: "unix",
       useWorker: true,
+      copyWithEmptySelection: true,
     });
     editor.session.on("change", () => {
       if (editor.session.$worker)

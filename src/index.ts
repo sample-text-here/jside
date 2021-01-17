@@ -1,7 +1,17 @@
-import { app, BrowserWindow, Menu, ipcMain, MenuItem, shell } from "electron";
+import {
+  app,
+  BrowserWindow,
+  Menu,
+  ipcMain,
+  MenuItem,
+  shell,
+  dialog,
+} from "electron";
 import { generateMenu } from "./libs/menu";
+import { parse } from "./libs/args";
 import * as path from "path";
 import { existsSync } from "fs";
+const args = parse();
 
 const prevent = [
   { key: "enter", ctrl: true, shift: false, alt: false, message: "run" },
@@ -30,6 +40,12 @@ const createWindow = (): void => {
 
   win.once("ready-to-show", () => {
     win.show();
+    if (args.file) {
+      if (existsSync(path.resolve(args.file))) {
+        // (ab)use openRecent
+        win.webContents.send("openRecent", args.file);
+      }
+    }
   });
 
   win.webContents.on("before-input-event", (e, input) => {
@@ -47,7 +63,7 @@ const createWindow = (): void => {
     }
   });
 
-  const menu = generateMenu(win);
+  const menu = generateMenu(win, args.options);
   menu.append(
     new MenuItem({
       label: "help",
@@ -76,13 +92,6 @@ const createWindow = (): void => {
   ipcMain.on("showFile", (e, file) => {
     shell.showItemInFolder(file);
   });
-
-  if (process.argv[3]) {
-    if (existsSync(process.argv[3])) {
-      // (ab)use openRecent
-      win.webContents.send("openRecent", process.argv[3]);
-    }
-  }
 };
 
 function showHelp(parent): void {

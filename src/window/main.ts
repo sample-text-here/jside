@@ -7,7 +7,7 @@ import { Bar } from "../ui/dragBar";
 import { formatWithCursor } from "prettier";
 import * as vm from "../libs/run";
 import * as files from "../libs/files";
-import { basename } from "path";
+import { basename, extname } from "path";
 import * as ts from "../libs/compile";
 
 const main = document.getElementById("main");
@@ -25,6 +25,7 @@ window.asdf = edit;
 bar.element.style.gridArea = "resize";
 
 let filePath = null,
+  ext = "js",
   updated = false;
 
 edit.editor.session.on("change", () => {
@@ -36,6 +37,35 @@ edit.editor.session.on("change", () => {
   updated = true;
   updateTitle();
 });
+
+edit.listen("togglerecording", "ctrl-u", (editor) =>
+  editor.commands.toggleRecording(editor)
+);
+
+edit.listen("replaymacro", "ctrl-j", (editor) =>
+  editor.commands.replay(editor)
+);
+
+edit.listen("movelinesup", "ctrl-shift-up", (editor) => editor.moveLinesUp());
+
+edit.listen("movelinesdown", "ctrl-shift-down", (editor) =>
+  editor.moveLinesDown()
+);
+
+edit.listen("copylinesup", "alt-up", (editor) => editor.copyLinesUp());
+
+edit.listen("copylinesdown", "alt-down", (editor) => editor.copyLinesDown());
+
+edit.listen("modifyNumberUp", "alt-shift-up", (editor) =>
+  editor.modifyNumber(1)
+);
+
+edit.listen("modifyNumberDown", "alt-shift-down", (editor) =>
+  editor.modifyNumber(-1)
+);
+
+edit.listen("touppercase", "", () => {});
+edit.listen("tolowercase", "", () => {});
 
 function save(): void {
   if (!filePath) filePath = files.fileSave();
@@ -73,6 +103,7 @@ function openPath(newPath: string, force = false): void {
     updateTitle();
   });
   filePath = newPath;
+  ext = extname(newPath).replace(/^\./, "");
   edit.editor.session.setValue(files.openFile(newPath));
 }
 
@@ -93,13 +124,14 @@ function openSketch(): void {
 }
 
 function format(): void {
+  if (ext === "txt") return;
   const editor = edit.editor;
   const cursor = editor.selection.getCursor();
   const index = editor.session.doc.positionToIndex(cursor);
   const value = editor.session.getValue();
   const result = formatWithCursor(value, {
     cursorOffset: index,
-    parser: "babel",
+    parser: ext === "js" ? "babel" : ext,
   });
   editor.session.doc.setValue(result.formatted);
   const position = editor.session.doc.indexToPosition(result.cursorOffset);
@@ -130,6 +162,24 @@ consol.run = (code): void => {
   updateTitle();
 };
 
+function run(): void {
+  const code = edit.editor.session.getValue();
+  console.log(ext);
+  switch (ext) {
+    case "js":
+      const res = vm.run(code);
+      consol[res.err ? "error" : "log"](res.value);
+      break;
+    case "json":
+      try {
+        consol.log(JSON.parse(code));
+      } catch (err) {
+        consol.error(err);
+      }
+      break;
+  }
+}
+
 ipcRenderer.on("menu", (e, message) => {
   switch (message) {
     case "save":
@@ -145,8 +195,7 @@ ipcRenderer.on("menu", (e, message) => {
       format();
       break;
     case "run":
-      const res = vm.run(edit.editor.session.getValue());
-      consol[res.err ? "error" : "log"](res.value);
+      run();
       break;
     case "clear":
       consol.clear();

@@ -193,6 +193,6 @@ export function generateMenu(win: BrowserWindow, options): Menu {
     new MenuItem({ label: "permissions", type: "submenu", submenu: perms })
   );
   menu.append(new MenuItem({ label: "code", type: "submenu", submenu: code }));
-  if (options.dev) menu.append(new MenuItem({ role: "viewMenu" }));
+  if (options.includes("dev")) menu.append(new MenuItem({ role: "viewMenu" }));
   return menu;
 }

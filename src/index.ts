@@ -13,6 +13,8 @@ import * as path from "path";
 const args = parse();
 const allowed = ["js", "json", "md", "txt"];
 
+console.log(args);
+
 const prevent = [
   { key: "enter", ctrl: true, shift: false, alt: false, message: "run" },
   { key: "l", ctrl: true, shift: false, alt: false, message: "clear" },
@@ -40,7 +42,7 @@ const createWindow = (): void => {
 
   win.once("ready-to-show", () => {
     win.show();
-    if (args.file && allowed.includes(path.extname(args.file))) {
+    if (args.file && allowed.includes(path.extname(args.file).replace(/^./, ""))) {
       // (ab)use openRecent
       win.webContents.send("openRecent", args.file);
     }

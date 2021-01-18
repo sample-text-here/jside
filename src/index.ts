@@ -10,8 +10,8 @@ import {
 import { generateMenu } from "./libs/menu";
 import { parse } from "./libs/args";
 import * as path from "path";
-import { existsSync } from "fs";
 const args = parse();
+const allowed = ["js", "json", "md", "txt"];
 
 const prevent = [
   { key: "enter", ctrl: true, shift: false, alt: false, message: "run" },
@@ -40,11 +40,9 @@ const createWindow = (): void => {
 
   win.once("ready-to-show", () => {
     win.show();
-    if (args.file) {
-      if (existsSync(path.resolve(args.file))) {
-        // (ab)use openRecent
-        win.webContents.send("openRecent", args.file);
-      }
+    if (args.file && allowed.includes(path.extname(args.file))) {
+      // (ab)use openRecent
+      win.webContents.send("openRecent", args.file);
     }
   });
 

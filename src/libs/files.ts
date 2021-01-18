@@ -6,6 +6,13 @@ const filesDir = join(dataDir, "files");
 const sketchPath = join(dataDir, "sketch.js");
 const defaultBackupPath = join(dataDir, "backup.js");
 const configPath = join(dataDir, "config.json");
+const filters = [
+  { name: "javascript", extensions: ["js"] },
+  { name: "json", extensions: ["json"] },
+  { name: "markdown", extensions: ["md"] },
+  { name: "text", extensions: ["txt"] },
+  { name: "all", extensions: ["js", "json", "md", "txt"] },
+];
 
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 if (!fs.existsSync(filesDir)) fs.mkdirSync(filesDir, { recursive: true });
@@ -79,7 +86,7 @@ export function fileOpen(): string[] {
   return remote.dialog.showOpenDialogSync({
     title: "open file",
     properties: ["openFile"],
-    filters: [{ name: "js", extensions: ["js"] }],
+    filters,
     defaultPath: filesDir,
   });
 }
@@ -87,7 +94,7 @@ export function fileOpen(): string[] {
 export function fileSave(): string {
   return remote.dialog.showSaveDialogSync({
     title: "save file",
-    filters: [{ name: "js", extensions: ["js"] }],
+    filters,
     defaultPath: filesDir,
   });
 }

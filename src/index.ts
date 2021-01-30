@@ -9,13 +9,12 @@ import {
 } from "electron";
 import { generateMenu } from "./libs/menu";
 import { parse } from "./libs/args";
+import { options } from "./libs/options";
 import * as path from "path";
 const args = parse();
-const allowed = ["js", "json", "md", "txt"];
-
+const allowed = ["js", "json", "md", "txt", "mlog"];
 console.log(args);
-
-const prevent = [
+const keys = [
   { key: "enter", ctrl: true, shift: false, alt: false, message: "run" },
   { key: "l", ctrl: true, shift: false, alt: false, message: "clear" },
   { key: "s", ctrl: true, shift: false, alt: true, message: "format" },
@@ -41,15 +40,15 @@ const createWindow = (): void => {
   win.loadFile(path.join(__dirname, "window/index.html"));
 
   win.once("ready-to-show", () => {
-    win.show();
-    if (args.file && allowed.includes(path.extname(args.file).replace(/^./, ""))) {
+    if (args.file) {
       // (ab)use openRecent
       win.webContents.send("openRecent", args.file);
     }
+    win.show();
   });
 
   win.webContents.on("before-input-event", (e, input) => {
-    for (const i of prevent) {
+    for (const i of keys) {
       if (
         input.key.toLowerCase() === i.key &&
         i.ctrl === (input.control || input.meta) &&
@@ -74,12 +73,12 @@ const createWindow = (): void => {
 
   Menu.setApplicationMenu(menu);
 
-  ipcMain.on("updateRecent", (e, files) => {
+  ipcMain.on("updateRecent", (e) => {
     const recent = menu.getMenuItemById("recent");
     for (let i = 0; i < recent.submenu.items.length; i++)
       recent.submenu.items[i].visible = false;
     recent.submenu.items = [];
-    for (const file of files) {
+    for (const file of options.recent) {
       recent.submenu.append(
         new MenuItem({
           label: path.basename(file),

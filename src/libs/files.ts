@@ -1,70 +1,26 @@
 import { join } from "path";
 import * as fs from "fs";
 import { remote, ipcRenderer } from "electron";
-const dataDir = remote.app.getPath("userData");
-const filesDir = join(dataDir, "files");
-const sketchPath = join(dataDir, "sketch.js");
-const defaultBackupPath = join(dataDir, "backup.js");
-const configPath = join(dataDir, "config.json");
-const filters = [
-  { name: "javascript", extensions: ["js"] },
-  { name: "json", extensions: ["json"] },
-  { name: "markdown", extensions: ["md"] },
-  { name: "text", extensions: ["txt"] },
-  { name: "all", extensions: ["js", "json", "md", "txt"] },
-];
-
-if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
-if (!fs.existsSync(filesDir)) fs.mkdirSync(filesDir, { recursive: true });
-if (!fs.existsSync(sketchPath)) fs.writeFileSync(sketchPath, "");
-if (!fs.existsSync(configPath)) fs.writeFileSync(configPath, "{}");
-
-interface Settings {
-  recent: Array<string>;
-  backup: string;
-  [x: string]: any;
-}
-
-let config: Settings = {
-  recent: [],
-  backup: defaultBackupPath,
-};
-
-function save() {
-  fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
-}
-
-try {
-  config = { ...config, ...JSON.parse(fs.readFileSync(configPath, "utf8")) };
-} catch (err) {
-  save();
-}
-
-if (!fs.existsSync(config.backup)) fs.writeFileSync(config.backup, "");
-ipcRenderer.send("updateRecent", config.recent);
+import { options, paths } from "./options";
+ipcRenderer.send("updateRecent");
 
 function recentFile(path: string): void {
-  console.log(path);
-  const maxItems = 10;
-  config.recent = config.recent
-    .filter((i) => i !== path)
-    .slice(0, maxItems - 1);
-  config.recent.unshift(path);
-  console.log(config.recent);
-  ipcRenderer.send("updateRecent", config.recent);
-  save();
+  const r = options.recent;
+  if (r.indexOf(path) < 0) r.unshift(path);
+  if (r.length > options.maxRecent) r.pop();
+  ipcRenderer.send("updateRecent");
 }
 
 export function saveSketch(value: string): void {
-  fs.writeFileSync(sketchPath, value);
+  fs.writeFileSync(paths.sketch, value);
 }
 
 export function loadSketch(): string {
-  return fs.readFileSync(sketchPath, "utf8");
+  return fs.readFileSync(paths.sketch, "utf8");
 }
 
 export function backup(file: string): void {
-  fs.writeFileSync(config.backup, file);
+  fs.writeFileSync(options.backup, file);
 }
 
 let samePath = false;
@@ -77,7 +33,6 @@ export function saveFile(path: string, value: string): void {
 
 export function openFile(path: string): string {
   samePath = false;
-  console.log(path);
   recentFile(path);
   return fs.readFileSync(path, "utf8");
 }
@@ -86,19 +41,19 @@ export function fileOpen(): string[] {
   return remote.dialog.showOpenDialogSync({
     title: "open file",
     properties: ["openFile"],
-    filters,
-    defaultPath: filesDir,
+    filters: options.filters,
+    defaultPath: options.filesDir,
   });
 }
 
 export function fileSave(): string {
   return remote.dialog.showSaveDialogSync({
     title: "save file",
-    filters,
-    defaultPath: filesDir,
+    filters: options.filters,
+    defaultPath: options.filesDir,
   });
 }
 
 export function lastPath(): string {
-  return config.recent[0];
+  return options.recent[0];
 }

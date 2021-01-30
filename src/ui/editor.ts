@@ -12,6 +12,12 @@ ace.config.set("modePath", acePath);
 
 langTools.setCompleters([langTools.textCompleter, keywords]);
 
+interface command {
+  name: string;
+  bindKey: { win: string; mac: string };
+  exec?: Function;
+}
+
 export class Editor extends Element {
   editor;
 
@@ -55,12 +61,31 @@ export class Editor extends Element {
     this.element = el;
   }
 
-  listen(name: string, key: string, exec: Function): void {
+  listen(name: string, key: string, exec?: Function): void {
     const mac = key.replace(/ctrl/g, "cmd");
-    this.editor.commands.addCommand({
+    const command: command = {
       name,
-      bindKey: { win: key, mac: mac },
-      exec,
-    });
+      bindKey: { win: key, mac: key },
+    };
+    if (exec) command.exec = exec;
+    this.editor.commands.addCommand(command);
+  }
+
+  mode(ext) {
+    const session = this.editor.session;
+    switch (ext) {
+      case "js":
+        session.setMode("ace/mode/javascript");
+        break;
+      case "json":
+        session.setMode("ace/mode/json");
+        break;
+      case "md":
+        session.setMode("ace/mode/markdown");
+        break;
+      default:
+        session.setMode("ace/mode/text");
+        break;
+    }
   }
 }

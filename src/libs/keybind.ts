@@ -1,27 +1,37 @@
+const binds = {};
+
 export class Bind {
   ctrl = false;
   alt = false;
   shift = false;
-  key = "";
-  constructor(obj?: {
-    ctrl: boolean;
-    alt: boolean;
-    shift: boolean;
-    key: string;
-  }) {
-    if (!obj) return this;
-    this.ctrl = obj.ctrl || false;
-    this.alt = obj.alt || false;
-    this.shift = obj.shift || false;
-    this.key = obj.key || "";
+  private key = "";
+  constructor(str: string) {
+    str
+      .toLowerCase()
+      .replace(/\s/g, "")
+      .split(/[\-+]/g)
+      .forEach((i) => {
+        switch (i) {
+          case "cmd":
+            i = "ctrl";
+          case "ctrl":
+          case "alt":
+          case "shift":
+            this[i] = true;
+            break;
+          default:
+            this.key = i;
+            break;
+        }
+      });
   }
 
   toString(): string {
     let text = "";
-    if (this.ctrl) text += "ctrl + ";
-    if (this.alt) text += "alt + ";
-    if (this.shift) text += "shift + ";
-    text += this.key.toLowerCase();
+    if (this.ctrl) text += "ctrl+";
+    if (this.alt) text += "alt+";
+    if (this.shift) text += "shift+";
+    text += this.key;
     return text;
   }
 
@@ -31,30 +41,10 @@ export class Bind {
   }
 
   isSame(bind: Bind): boolean {
-    if (this.key.toLowerCase() !== bind.key.toLowerCase()) return false;
+    if (this.key !== bind.key) return false;
     if (this.ctrl !== bind.ctrl) return false;
     if (this.alt !== bind.alt) return false;
     if (this.shift !== bind.shift) return false;
     return true;
-  }
-
-  static fromString(str: string): Bind {
-    const bind = new Bind();
-    str
-      .replace(/\s/g, "")
-      .split("+")
-      .forEach((i) => {
-        switch (i) {
-          case "ctrl":
-          case "alt":
-          case "shift":
-            bind[i] = true;
-            break;
-          default:
-            bind.key = i;
-            break;
-        }
-      });
-    return bind;
   }
 }

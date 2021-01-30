@@ -64,6 +64,8 @@ edit.listen("modifyNumberDown", "alt-shift-down", (editor) =>
   editor.modifyNumber(-1)
 );
 
+edit.listen("removeline", "ctrl-shift-k", (editor) => editor.removeLines());
+
 edit.listen("touppercase", "", () => {});
 edit.listen("tolowercase", "", () => {});
 
@@ -105,6 +107,8 @@ function openPath(newPath: string, force = false): void {
   filePath = newPath;
   ext = extname(newPath).replace(/^\./, "");
   edit.editor.session.setValue(files.openFile(newPath));
+  edit.mode(ext);
+  // edit.editor.session.setMode("ace/mode/markdown");
 }
 
 function reopen(): void {
@@ -147,11 +151,14 @@ bar.dragged = function (e): void {
   let newX = e.clientX;
   if (newX < minX) newX = minX;
   if (newX > maxX) newX = maxX;
-  main.style.gridTemplateColumns = `${newX}px ${barWidth}px 2fr`;
+  main.style.gridTemplateColumns = `3fr ${barWidth}px ${
+    window.innerWidth - newX
+  }px`;
   const atEdge = newX === minX || newX === maxX;
   bar.element.style.opacity = String(atEdge ? 0 : 1);
   edit.editor.resize();
   consol.resize();
+  ` newXnewX`;
 };
 
 vm.setConsole(consol);

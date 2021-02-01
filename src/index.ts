@@ -9,23 +9,39 @@ import {
 } from "electron";
 import { generateMenu } from "./libs/menu";
 import { parse } from "./libs/args";
-import { options } from "./libs/options";
+import { options, reload } from "./libs/options";
+import { Bind } from "./libs/keybind";
 import * as path from "path";
 const args = parse();
 const allowed = ["js", "json", "md", "txt", "mlog"];
-console.log(args);
-const keys = [
-  { key: "enter", ctrl: true, shift: false, alt: false, message: "run" },
-  { key: "l", ctrl: true, shift: false, alt: false, message: "clear" },
-  { key: "s", ctrl: true, shift: false, alt: true, message: "format" },
-  { key: "e", ctrl: true, shift: true, alt: false, message: "showFile" },
-];
+const keys = [];
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require("electron-squirrel-startup")) app.quit();
 
-const createWindow = (): void => {
-  // Create the browser window.
+function regenMenu(): void {
+  reload();
+
+  const menu = generateMenu(args.options.includes("dev"));
+  menu.append(
+    new MenuItem({
+      label: "help",
+      role: "help",
+      click: (): void => showHelp(),
+    })
+  );
+
+  Menu.setApplicationMenu(menu);
+
+  while (keys.length > 0) keys.pop();
+
+  for (let i in options.keybinds) {
+    if (!["run", "clear", "format", "showFile"].includes(i)) continue;
+    keys.push({ bind: new Bind(options.keybinds[i]), message: i });
+  }
+}
+
+function createWindow(): BrowserWindow {
   const win = new BrowserWindow({
     height: 400,
     width: 600,
@@ -40,66 +56,33 @@ const createWindow = (): void => {
   win.loadFile(path.join(__dirname, "window/index.html"));
 
   win.once("ready-to-show", () => {
-    if (args.file) {
-      // (ab)use openRecent
-      win.webContents.send("openRecent", args.file);
-    }
     win.show();
   });
 
   win.webContents.on("before-input-event", (e, input) => {
+    const press = new Bind(input.key.toLowerCase());
+    press.ctrl = input.control || input.meta;
+    press.shift = input.shift;
+    press.alt = input.alt;
+    if (!press.isValid()) return;
     for (const i of keys) {
-      if (
-        input.key.toLowerCase() === i.key &&
-        i.ctrl === (input.control || input.meta) &&
-        i.shift === input.shift &&
-        i.alt === input.alt
-      ) {
+      if (press.isSame(i.bind)) {
         e.preventDefault();
 
         win.webContents.send("menu", i.message);
+        break;
       }
     }
   });
 
-  const menu = generateMenu(win, args.options);
-  menu.append(
-    new MenuItem({
-      label: "help",
-      role: "help",
-      click: (): void => showHelp(win),
-    })
-  );
+  return win;
+}
 
-  Menu.setApplicationMenu(menu);
-
-  ipcMain.on("updateRecent", (e) => {
-    const recent = menu.getMenuItemById("recent");
-    for (let i = 0; i < recent.submenu.items.length; i++)
-      recent.submenu.items[i].visible = false;
-    recent.submenu.items = [];
-    for (const file of options.recent) {
-      recent.submenu.append(
-        new MenuItem({
-          label: path.basename(file),
-          click: (): void => win.webContents.send("openRecent", file),
-        })
-      );
-    }
-  });
-
-  ipcMain.on("showFile", (e, file) => {
-    shell.showItemInFolder(file);
-  });
-};
-
-function showHelp(parent): void {
+function showHelp(): void {
   const help = new BrowserWindow({
     height: 350,
     width: 350,
     show: false,
-    parent,
-    modal: true,
   });
 
   help.loadFile(path.join(__dirname, "window/help.html"));
@@ -113,7 +96,16 @@ function showHelp(parent): void {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.on("ready", createWindow);
+app.on("ready", () => {
+  const win = createWindow();
+  win.once("ready-to-show", () => {
+    if (args.file) {
+      // (ab)use openRecent
+      win.webContents.send("openRecent", args.file);
+    }
+  });
+  regenMenu();
+});
 
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits
@@ -132,5 +124,8 @@ app.on("activate", () => {
   }
 });
 
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and import them here.
+ipcMain.on("updateRecent", regenMenu);
+
+ipcMain.on("showFile", (e, file) => {
+  shell.showItemInFolder(file);
+});

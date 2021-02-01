@@ -134,6 +134,13 @@ export class Console extends Element {
     this.content.append(disp);
   }
 
+  raw(str: string, kind?: string): void {
+    queueScroll(this.content);
+    const disp = create("div", ["display"], str);
+    if (kind) disp.classList.add(kind);
+    this.content.append(disp);
+  }
+
   resize(): void {
     this.input.editor.resize();
   }

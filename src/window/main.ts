@@ -2,13 +2,17 @@
 
 import { ipcRenderer } from "electron";
 import { Editor } from "../ui/editor";
+import { create } from "../libs/elements";
 import { Console } from "../ui/console";
 import { Bar } from "../ui/dragBar";
+import { Popup } from "../ui/popup";
 import { formatWithCursor } from "prettier";
 import * as vm from "../libs/run";
 import * as files from "../libs/files";
 import { basename, extname } from "path";
 import * as ts from "../libs/compile";
+import { Event } from "../libs/events";
+import { paths, options } from "../libs/options";
 
 const main = document.getElementById("main");
 const [edit, bar, consol] = [
@@ -16,17 +20,23 @@ const [edit, bar, consol] = [
   new Bar(main, "leftRight"),
   new Console(main),
 ];
-declare global {
-  interface Window {
-    asdf: any;
-  }
-}
-window.asdf = edit;
+const recordingPopup = new Popup(edit.element, "recording", { dots: true });
+
 bar.element.style.gridArea = "resize";
 
 let filePath = null,
   ext = "js",
   updated = false;
+
+edit.listen("showSettingsMenu", "ctrl-,", () => {
+  openPath(paths.config);
+  consol.raw("you are editing a config file", "warn");
+});
+
+new Event("reload").addListener(() => {
+  new Popup(document.body, "reloaded!", { fade: 2000 }).toggle();
+  ipcRenderer.send("updateRecent");
+});
 
 edit.editor.session.on("change", () => {
   if (filePath === null) {
@@ -38,13 +48,26 @@ edit.editor.session.on("change", () => {
   updateTitle();
 });
 
-edit.listen("togglerecording", "ctrl-u", (editor) =>
-  editor.commands.toggleRecording(editor)
-);
+edit.listen("togglerecording", "ctrl-u", (editor) => {
+  editor.commands.toggleRecording(editor);
+  recordingPopup.toggle();
+});
 
-edit.listen("replaymacro", "ctrl-j", (editor) =>
-  editor.commands.replay(editor)
-);
+let numReplays = 0,
+  replayTimeout = null;
+edit.listen("replaymacro", "ctrl-j", (editor) => {
+  editor.commands.replay(editor);
+  clearTimeout(replayTimeout);
+  numReplays++;
+  new Popup(
+    edit.element,
+    "replay" + (numReplays <= 1 ? "" : " x" + numReplays),
+    { fade: 1000 }
+  ).toggle();
+  replayTimeout = setTimeout(() => {
+    numReplays = 0;
+  }, 2000);
+});
 
 edit.listen("movelinesup", "ctrl-shift-up", (editor) => editor.moveLinesUp());
 
@@ -69,6 +92,29 @@ edit.listen("removeline", "ctrl-shift-k", (editor) => editor.removeLines());
 edit.listen("touppercase", "", () => {});
 edit.listen("tolowercase", "", () => {});
 
+// let reopenIndex = 0,
+// reopenTimeout = null;
+
+// TODO: make file management less awful
+function postOpen(newPath: string): void {
+  queueMicrotask(() => {
+    updated = false;
+    updateTitle();
+  });
+  filePath = newPath;
+  ext = extname(newPath || ".js").replace(/^\./, "");
+  if (newPath) edit.editor.session.setValue(files.openFile(newPath));
+  edit.mode(ext);
+  if (newPath === paths.config)
+    consol.raw("you are editing a config file", "warn");
+}
+
+function confirmOpen() {
+  if (updated && filePath && !window.confirm("your file isnt saved, continue?"))
+    return false;
+  return true;
+}
+
 function save(): void {
   if (!filePath) filePath = files.fileSave();
   if (!filePath) return;
@@ -86,45 +132,57 @@ function saveAs(): void {
 }
 
 function open(): void {
-  if (updated && filePath && !window.confirm("your file isnt saved, continue?"))
-    return;
+  if (!confirmOpen()) return;
+  // reopenIndex--;
+  // if (reopenIndex < 0) {
+  // reopenIndex = -1;
+  // openPath((files.fileOpen() || [])[0], true);
+  // return;
+  // }
+  // const newPath = options.internal.recent[reopenIndex];
+  // if (newPath) {
+  // files.openFileKeepPath(newPath);
+  // postOpen(newPath);
+  // clearTimeout(reopenTimeout);
+  // reopenTimeout = setTimeout(() => {
+  // files.recentFile(newPath);
+  // reopenIndex = -1;
+  // }, 2000);
+  // return;
+  // }
   openPath((files.fileOpen() || [])[0], true);
 }
 
 function openPath(newPath: string, force = false): void {
   if (!newPath) return;
-  if (
-    updated &&
-    filePath &&
-    !force &&
-    !window.confirm("your file isnt saved, continue?")
-  )
-    return;
-  queueMicrotask(() => {
-    updated = false;
-    updateTitle();
-  });
-  filePath = newPath;
-  ext = extname(newPath).replace(/^\./, "");
-  edit.editor.session.setValue(files.openFile(newPath));
-  edit.mode(ext);
-  // edit.editor.session.setMode("ace/mode/markdown");
+  if (!force && !confirmOpen()) return;
+  postOpen(newPath);
 }
 
+// TODO: cyclic open/close
 function reopen(): void {
-  const lastPath = files.lastPath();
-  if (lastPath) openPath(lastPath);
+  // reopenIndex++;
+  // if (reopenIndex >= options.maxRecent) {
+  // reopenIndex = options.maxRecent - 1;
+  // }
+  // const newPath = options.internal.recent[reopenIndex];
+  // if (newPath) {
+  // files.openFileKeepPath(newPath);
+  // postOpen(newPath);
+  // clearTimeout(reopenTimeout);
+  // reopenTimeout = setTimeout(() => {
+  // reopenIndex = -1;
+  // files.recentFile(newPath);
+  // }, 2000);
+  // }
+  const newPath = options.internal.recent[0];
+  if (newPath && confirmOpen()) files.recentFile(newPath);
 }
 
 function openSketch(): void {
-  if (updated && filePath && !window.confirm("your file isnt saved, continue?"))
-    return;
-  filePath = null;
+  if (!confirmOpen()) return;
   edit.editor.session.setValue(files.loadSketch());
-  queueMicrotask(() => {
-    updated = false;
-    updateTitle();
-  });
+  postOpen(null);
 }
 
 function format(): void {
@@ -158,7 +216,6 @@ bar.dragged = function (e): void {
   bar.element.style.opacity = String(atEdge ? 0 : 1);
   edit.editor.resize();
   consol.resize();
-  ` newXnewX`;
 };
 
 vm.setConsole(consol);

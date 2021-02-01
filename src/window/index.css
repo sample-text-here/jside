@@ -31,6 +31,10 @@ body {
   grid-template-columns: 3fr 3px 2fr;
 }
 
+#main > * {
+  position: relative;
+}
+
 .bar {
   background: var(--foreground);
 }

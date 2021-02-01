@@ -1,8 +1,10 @@
 const events: Record<string, Event> = {}; // Events registry
 
+// TODO: make Event more intuitive
+// rn new Event("asdf") will not return a "new Event" if it already exists
 export class Event {
-  listeners: Array<Function>;
-  name: string;
+  listeners: Array<Function> = [];
+  name: string = "";
 
   // create a new event
   constructor(name: string) {

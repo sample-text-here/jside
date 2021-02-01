@@ -4,7 +4,7 @@ export class Bind {
   ctrl = false;
   alt = false;
   shift = false;
-  private key = "";
+  private _key = "";
   constructor(str: string) {
     str
       .toLowerCase()
@@ -26,12 +26,22 @@ export class Bind {
       });
   }
 
-  toString(): string {
+  get key() {
+    return this._key;
+  }
+
+  set key(key: string) {
+    this._key = key.toLowerCase();
+  }
+
+  toString(electron = false): string {
     let text = "";
-    if (this.ctrl) text += "ctrl+";
-    if (this.alt) text += "alt+";
-    if (this.shift) text += "shift+";
-    text += this.key;
+    if (this.ctrl) text += electron ? "CmdOrCtrl+" : "ctrl-";
+    if (this.alt) text += electron ? "Alt+" : "alt-";
+    if (this.shift) text += electron ? "Shift+" : "shift-";
+    text += electron
+      ? this.key.charAt(0).toUpperCase() + this.key.slice(1)
+      : this.key;
     return text;
   }
 

@@ -1,5 +1,7 @@
 // save and load options
 import { join } from "path";
+import { NodeVM } from "vm2";
+import { Event } from "./events";
 import * as fs from "fs";
 import { app as _app, remote } from "electron";
 const app = _app || remote.app;
@@ -56,8 +58,11 @@ interface Options {
   keybinds: Record<string, string>;
   backup: string;
   filesDir: string;
-  recent: Array<string>;
   maxRecent: number;
+  internal: {
+    recent: Array<string>;
+    [key: string]: any;
+  };
 }
 
 const defaultOptions: Options = {
@@ -66,7 +71,6 @@ const defaultOptions: Options = {
     { name: "json", extensions: ["json"] },
     { name: "markdown", extensions: ["md"] },
     { name: "text", extensions: ["txt"] },
-    { name: "all", extensions: ["js", "json", "md", "txt"] },
   ],
   theme: {
     isDark: "true",
@@ -89,15 +93,22 @@ const defaultOptions: Options = {
     },
   },
   keybinds: {
+    open: "ctrl-s",
+    save: "ctrl-o",
+    saveAs: "ctrl-shift-s",
+    openRecent: "ctrl-shift-o",
+    showFile: "ctrl-shift-e",
     sketchpad: "ctrl-alt-o",
     format: "ctrl-alt-s",
     quit: "ctrl-q",
-    runCode: "ctrl-enter",
-    clearConsole: "ctrl-l",
+    run: "ctrl-enter",
+    clear: "ctrl-l",
+  },
+  internal: {
+    recent: [],
   },
   backup: join(dataDir, "backup.js"),
   filesDir: join(dataDir, "files"),
-  recent: [],
   maxRecent: 10,
 };
 
@@ -118,16 +129,54 @@ function isOptions(obj: Object): obj is Options {
   return matches(obj, defaultOptions);
 }
 
+export function save() {
+  fs.writeFileSync(paths.internal, JSON.stringify(options.internal));
+}
+
+function assign(a: Object, b: Object): void {
+  for (let i in b) {
+    if (
+      i in a &&
+      a[i] &&
+      typeof a[i] === "object" &&
+      b[i] &&
+      typeof b[i] === "object"
+    ) {
+      assign(a[i], b[i]);
+    } else {
+      a[i] = b[i];
+    }
+  }
+}
+
+const vm = new NodeVM({
+  require: {
+    external: false,
+    builtin: ["*"],
+  },
+});
+
 export function reload(): void {
   const newOpts: Options = deepCopy<Options>(defaultOptions);
   try {
     const json = JSON.parse(fs.readFileSync(paths.internal, "utf8"));
     if (typeof json !== "object") throw "not object";
     if (!json) throw "is null";
-    Object.assign(newOpts, json);
+    assign(newOpts.internal, json);
   } catch {
     fs.writeFileSync(paths.internal, "{}");
   }
+
+  try {
+    const toEval = fs.readFileSync(paths.config, "utf8");
+    assign(newOpts, vm.run(toEval));
+  } catch {}
+
+  const allFilters: Array<string> = [];
+  for (let i of newOpts.filters) {
+    allFilters.push(...i.extensions);
+  }
+  newOpts.filters.push({ name: "all", extensions: allFilters });
 
   if (!isOptions(options)) throw "invalid options";
   Object.assign(options, newOpts);
@@ -136,5 +185,11 @@ export function reload(): void {
     fs.mkdirSync(options.filesDir, { recursive: true });
   }
 }
+
+const reloadEv = new Event("reload");
+fs.watchFile(paths.config, () => {
+  reload();
+  reloadEv.fire();
+});
 
 reload();

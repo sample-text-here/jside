@@ -1,89 +1,101 @@
 // keybinds/menu at the top of the window
 import { Menu, MenuItem, BrowserWindow } from "electron";
+import { options } from "./options";
+import { Bind } from "./keybind";
+import { basename } from "path";
 
-export function generateMenu(win: BrowserWindow, options): Menu {
-  function call(message: string): void {
-    win.webContents.send("menu", message);
+function getBind(name: string): string {
+  return new Bind(options.keybinds[name]).toString(true);
+}
+
+function send(name: string, message: any): void {
+  BrowserWindow.getFocusedWindow().webContents.send(name, message);
+}
+
+function call(message: string) {
+  return () => send("menu", message);
+}
+
+function perm(item: MenuItem) {
+  // TODO: convert to own event
+  // return () => send("perm", {});
+  return () => send("menu", item.id + "-" + item.checked);
+}
+
+export function generateMenu(dev = false): Menu {
+  const recent = [];
+  for (const file of options.internal.recent) {
+    recent.push(
+      new MenuItem({
+        label: basename(file),
+        click: () => send("openRecent", file),
+      })
+    );
   }
 
-  const files = [];
-  files.push(
+  const files = new Menu();
+  files.append(
     new MenuItem({
       label: "open",
-      accelerator: "CommandOrControl+o",
-      click(): void {
-        call("open");
-      },
+      accelerator: getBind("open"),
+      click: call("open"),
     })
   );
-  files.push(
+  files.append(
     new MenuItem({
       label: "save",
-      accelerator: "CommandOrControl+s",
-      click(): void {
-        call("save");
-      },
+      accelerator: getBind("save"),
+      click: call("save"),
     })
   );
-  files.push(
+  files.append(
     new MenuItem({
       label: "save as",
-      accelerator: "CommandOrControl+shift+s",
-      click(): void {
-        call("saveAs");
-      },
+      accelerator: getBind("saveAs"),
+      click: call("saveAs"),
     })
   );
-  files.push(
+  files.append(
     new MenuItem({
       label: "show file",
-      accelerator: "CommandOrControl+shift+e",
-      click(): void {
-        call("showFile");
-      },
+      accelerator: getBind("showFile"),
+      click: call("showFile"),
     })
   );
-  files.push(new MenuItem({ type: "separator" }));
-  files.push(
+  files.append(new MenuItem({ type: "separator" }));
+  files.append(
     new MenuItem({
       label: "recent",
       id: "recent",
       type: "submenu",
-      submenu: [],
+      submenu: recent,
     })
   );
-  files.push(
+  files.append(
     new MenuItem({
       label: "reopen file",
-      accelerator: "CommandOrControl+shift+o",
-      click(): void {
-        call("reopen");
-      },
+      accelerator: getBind("openRecent"),
+      click: call("reopen"),
     })
   );
-  files.push(
+  files.append(
     new MenuItem({
       label: "sketchpad",
-      accelerator: "CommandOrControl+alt+o",
-      click(): void {
-        call("sketch");
-      },
+      accelerator: getBind("sketchpad"),
+      click: call("sketch"),
     })
   );
-  files.push(new MenuItem({ type: "separator" }));
-  files.push(
+  files.append(new MenuItem({ type: "separator" }));
+  files.append(
     new MenuItem({
       role: "quit",
       label: "quit",
-      accelerator: "CommandOrControl+q",
+      accelerator: getBind("quit"),
     })
   );
 
-  const perms = [];
-  function perm(item): void {
-    call(`perm-${item.id.split("-")[1]}-${item.checked ? "on" : "off"}`);
-  }
-  perms.push(
+  const perms = new Menu();
+  perms.append(
     new MenuItem({
       label: "fs + path",
       id: "perm-fs/path",
@@ -92,7 +104,7 @@ export function generateMenu(win: BrowserWindow, options): Menu {
       click: perm,
     })
   );
-  perms.push(
+  perms.append(
     new MenuItem({
       label: "zlib",
       id: "perm-zlib",
@@ -101,7 +113,7 @@ export function generateMenu(win: BrowserWindow, options): Menu {
       click: perm,
     })
   );
-  perms.push(
+  perms.append(
     new MenuItem({
       label: "http",
       id: "perm-http",
@@ -110,7 +122,7 @@ export function generateMenu(win: BrowserWindow, options): Menu {
       click: perm,
     })
   );
-  perms.push(
+  perms.append(
     new MenuItem({
       label: "https",
       id: "perm-https",
@@ -119,7 +131,7 @@ export function generateMenu(win: BrowserWindow, options): Menu {
       click: perm,
     })
   );
-  perms.push(
+  perms.append(
     new MenuItem({
       label: "os",
       id: "perm-os",
@@ -128,7 +140,7 @@ export function generateMenu(win: BrowserWindow, options): Menu {
       click: perm,
     })
   );
-  perms.push(
+  perms.append(
     new MenuItem({
       label: "events",
       id: "perm-events",
@@ -137,7 +149,7 @@ export function generateMenu(win: BrowserWindow, options): Menu {
       click: perm,
     })
   );
-  perms.push(
+  perms.append(
     new MenuItem({
       label: "crypto",
       id: "perm-crypto",
@@ -147,42 +159,36 @@ export function generateMenu(win: BrowserWindow, options): Menu {
     })
   );
 
-  const edit = [];
-  edit.push(new MenuItem({ label: "undo", role: "undo" }));
-  edit.push(new MenuItem({ label: "redo", role: "redo" }));
-  edit.push(new MenuItem({ type: "separator" }));
-  edit.push(new MenuItem({ label: "cut", role: "cut" }));
-  edit.push(new MenuItem({ label: "copy", role: "copy" }));
-  edit.push(new MenuItem({ label: "paste", role: "paste" }));
-  edit.push(new MenuItem({ label: "delete", role: "delete" }));
-  edit.push(new MenuItem({ type: "separator" }));
-  edit.push(
+  const edit = new Menu();
+  edit.append(new MenuItem({ label: "undo", role: "undo" }));
+  edit.append(new MenuItem({ label: "redo", role: "redo" }));
+  edit.append(new MenuItem({ type: "separator" }));
+  edit.append(new MenuItem({ label: "cut", role: "cut" }));
+  edit.append(new MenuItem({ label: "copy", role: "copy" }));
+  edit.append(new MenuItem({ label: "paste", role: "paste" }));
+  edit.append(new MenuItem({ label: "delete", role: "delete" }));
+  edit.append(new MenuItem({ type: "separator" }));
+  edit.append(
     new MenuItem({
       label: "format code",
-      accelerator: "CommandOrControl+alt+s",
-      click(): void {
-        call("format");
-      },
+      accelerator: getBind("format"),
+      click: call("format"),
     })
   );
 
-  const code = [];
-  code.push(
+  const code = new Menu();
+  code.append(
     new MenuItem({
       label: "run",
-      accelerator: "CommandOrControl+enter",
-      click(): void {
-        call("run");
-      },
+      accelerator: getBind("run"),
+      click: call("run"),
     })
   );
-  code.push(
+  code.append(
     new MenuItem({
       label: "clear console",
-      accelerator: "CommandOrControl+l",
-      click(): void {
-        call("clear");
-      },
+      accelerator: getBind("clear"),
+      click: call("clear"),
     })
   );
 
@@ -190,9 +196,9 @@ export function generateMenu(win: BrowserWindow, options): Menu {
   menu.append(new MenuItem({ label: "file", type: "submenu", submenu: files }));
   menu.append(new MenuItem({ label: "edit", type: "submenu", submenu: edit }));
   menu.append(
-    new MenuItem({ label: "permissions", type: "submenu", submenu: perms })
+    new MenuItem({ label: "perms", type: "submenu", submenu: perms })
   );
   menu.append(new MenuItem({ label: "code", type: "submenu", submenu: code }));
-  if (options.includes("dev")) menu.append(new MenuItem({ role: "viewMenu" }));
+  if (dev) menu.append(new MenuItem({ role: "viewMenu" }));
   return menu;
 }

@@ -1,13 +1,15 @@
 import { join } from "path";
 import * as fs from "fs";
 import { remote, ipcRenderer } from "electron";
-import { options, paths } from "./options";
+import { options, paths, save } from "./options";
 ipcRenderer.send("updateRecent");
 
-function recentFile(path: string): void {
-  const r = options.recent;
-  if (r.indexOf(path) < 0) r.unshift(path);
+export function recentFile(path: string): void {
+  const r = options.internal.recent;
+  if (r.indexOf(path) >= 0) r.splice(r.indexOf(path), 1);
+  r.unshift(path);
   if (r.length > options.maxRecent) r.pop();
+  save();
   ipcRenderer.send("updateRecent");
 }
 
@@ -37,6 +39,14 @@ export function openFile(path: string): string {
   return fs.readFileSync(path, "utf8");
 }
 
+export function openFileKeepPath(path: string): string {
+  return fs.readFileSync(path, "utf8");
+}
+
+export function saveFileKeepPath(path: string, value: string): void {
+  fs.writeFileSync(path, value);
+}
+
 export function fileOpen(): string[] {
   return remote.dialog.showOpenDialogSync({
     title: "open file",
@@ -52,8 +62,4 @@ export function fileSave(): string {
     filters: options.filters,
     defaultPath: options.filesDir,
   });
-}
-
-export function lastPath(): string {
-  return options.recent[0];
 }

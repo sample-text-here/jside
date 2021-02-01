@@ -1,0 +1,28 @@
+.popup {
+  display: none;
+  position: absolute;
+  background: var(--accent);
+  color: var(--foreground);
+  top: 0.5em;
+  right: 0.5em;
+  padding: 4px;
+  border-radius: 4px;
+  opacity: 1;
+}
+
+.popup.dots::after {
+  content: "";
+  animation: dots 1s infinite;
+}
+
+@keyframes dots {
+  0% {
+    content: ".";
+  }
+  33% {
+    content: "..";
+  }
+  67% {
+    content: "...";
+  }
+}

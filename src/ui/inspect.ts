@@ -31,18 +31,29 @@ function displayArray(arr: Array<unknown>): HTMLElement {
       cont.classList.remove("expand");
       clear(cont);
       cont.append(create("div", ["expand"], "["));
+      let long = false,
+        totalStrLen = 0;
       for (const i in arr) {
         const item = create("div", ["item"]);
-        item.append(displayPart(arr[i]));
+        const thing = arr[i];
+        item.append(displayPart(thing));
+        if (thing) {
+          switch (typeof thing) {
+            case "object":
+              long = true;
+              break;
+            case "string":
+              totalStrLen += thing.length;
+              if (totalStrLen > 50) long = true;
+              break;
+          }
+        }
         if (Number(i) !== arr.length - 1)
           item.append(create("div", ["comma"], ","));
         cont.append(item);
       }
-      if (arr.length > 10) {
-        cont.style.display = "block";
-      } else {
-        cont.style.display = "flex";
-      }
+      if (arr.length > 10) long = true;
+      cont.style.display = long ? "block" : "flex";
       cont.append(create("div", ["expand"], "]"));
     } else {
       cont.classList.add("expand");

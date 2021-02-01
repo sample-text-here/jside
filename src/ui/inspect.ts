@@ -67,11 +67,14 @@ function displayArray(arr: Array<unknown>): HTMLElement {
   return body;
 }
 
-// TODO object preview
 function displayObject(obj): HTMLElement {
   let expanded = false;
+  const name = obj.constructor.name;
   const body = create("div", ["expand", "canExpand"]);
   const cont = create("div", ["object"]);
+  function before(): string {
+    return name === "Object" ? "" : name + " ";
+  }
   function toggle(e): void {
     if (!e.target.classList.contains("expand")) return;
     if (e.target.parentNode !== cont) return;
@@ -83,7 +86,7 @@ function displayObject(obj): HTMLElement {
     if (expanded) {
       cont.classList.remove("expand");
       clear(cont);
-      cont.append(create("div", ["expand"], "{"));
+      cont.append(create("div", ["expand"], before() + "{"));
       for (const i in obj) {
         const item = create("div", ["item"]);
         const key = create("div", ["key"], i);
@@ -96,10 +99,10 @@ function displayObject(obj): HTMLElement {
     } else {
       cont.classList.add("expand");
       clear(cont);
-      cont.append(create("div", ["expand"], "{...}"));
+      cont.append(create("div", ["expand"], before() + "{...}"));
     }
   }
-  cont.append(create("div", ["expand"], "{...}"));
+  cont.append(create("div", ["expand"], before() + "{...}"));
   body.append(cont);
   body.addEventListener("click", toggle);
   return body;

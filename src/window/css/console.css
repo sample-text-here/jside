@@ -37,14 +37,6 @@
   border-bottom: solid var(--foreground) 1px;
 }
 
-.display.warn {
-  background: #e6e15533;
-}
-
-.display.error {
-  background: #ed584533;
-}
-
 .display div:not(.expand) {
   cursor: auto;
 }

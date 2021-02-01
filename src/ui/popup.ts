@@ -7,14 +7,16 @@ interface PopupOptions {
   fadeLen: number;
 }
 
-const defaultOpts = {
+const defaultOpts: PopupOptions = {
   dots: false,
   fade: -1,
   fadeLen: 200,
 };
 
 export class Popup extends Element {
-  shown = false;
+  private shown: boolean = false;
+  private fadeTimeout;
+  readonly options: PopupOptions;
 
   constructor(
     parent: HTMLElement,
@@ -22,36 +24,62 @@ export class Popup extends Element {
     options: Partial<PopupOptions> = {}
   ) {
     super();
-    options = { ...defaultOpts, ...options };
+    this.options = { ...defaultOpts, ...options };
     const el = create("div", ["popup"], text);
-    if (options.dots) el.classList.add("dots");
+    if (this.options.dots) el.classList.add("dots");
     parent.append(el);
     this.element = el;
-    if (options.fade >= 0) {
-      setTimeout(() => {
-        if (options.fadeLen > 0) {
-          this.fade(options.fadeLen);
-        } else {
-          this.dispose();
-        }
-      }, options.fade);
-    }
   }
 
   fade(duration: number): void {
+    clearTimeout(this.fadeTimeout);
+    clearInterval(this.fadeTimeout);
     const style = this.element.style;
     style.opacity = "1";
-    const fade = setInterval(() => {
+    this.fadeTimeout = setInterval(() => {
       style.opacity = String(Number(style.opacity) - 0.01);
       if (Number(style.opacity) < 0) {
-        clearInterval(fade);
-        this.dispose();
+        clearInterval(this.fadeTimeout);
+        this.hide();
+        style.opacity = "";
       }
     }, duration / 100);
   }
 
   toggle(): void {
     this.shown = !this.shown;
-    this.element.style.display = this.shown ? "inline-block" : "none";
+    if (this.shown) {
+      this.show();
+    } else {
+      this.hide();
+    }
+  }
+
+  show(): void {
+    this.shown = true;
+    this.element.style.display = "inline-block";
+    if (this.options.fade >= 0) {
+      clearTimeout(this.fadeTimeout);
+      clearInterval(this.fadeTimeout);
+      this.fadeTimeout = setTimeout(() => {
+        if (this.options.fadeLen > 0) {
+          this.fade(this.options.fadeLen);
+        } else {
+          this.hide();
+        }
+      }, this.options.fade);
+    }
+  }
+
+  hide(): void {
+    this.shown = false;
+    this.element.style.display = "none";
+  }
+
+  text(val?: string): string {
+    if (val) {
+      this.element.innerText = val;
+    }
+    return this.element.innerText;
   }
 }

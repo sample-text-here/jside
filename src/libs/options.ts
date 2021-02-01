@@ -1,7 +1,8 @@
 // save and load options
+
 import { join } from "path";
 import { NodeVM } from "vm2";
-import { Event } from "./events";
+import { deepCopy, matches, assign } from "./util";
 import * as fs from "fs";
 import { app as _app, remote } from "electron";
 const app = _app || remote.app;
@@ -20,42 +21,12 @@ if (!fs.existsSync(paths.config)) {
   fs.writeFileSync(paths.config, "// config goes here\n\nmodule.exports = {}");
 }
 
-function deepCopyArray(arr: Array<any>) {
-  const out: Array<any> = [];
-  for (let i of arr) {
-    if (i && typeof i === "object") {
-      if (i instanceof Array) {
-        out.push(deepCopyArray(i));
-      } else {
-        out.push(deepCopy<Object>(i));
-      }
-    } else {
-      out.push(i);
-    }
-  }
-  return out;
-}
-
-function deepCopy<T = Object>(obj: Object): T {
-  const out = {};
-  for (let i in obj) {
-    if (obj[i] && typeof obj[i] === "object") {
-      if (obj[i] instanceof Array) {
-        out[i] = deepCopyArray(obj[i]);
-      } else {
-        out[i] = deepCopy<Object>(obj[i]);
-      }
-    } else {
-      out[i] = obj[i];
-    }
-  }
-  return <T>out;
-}
-
 interface Options {
   filters: Array<{ name: string; extensions: Array<string> }>;
   theme: Record<string, Record<string, string> | string>;
-  keybinds: Record<string, string>;
+  keybinds: {
+    [key: string]: Record<string, string>;
+  };
   backup: string;
   filesDir: string;
   maxRecent: number;
@@ -93,16 +64,43 @@ const defaultOptions: Options = {
     },
   },
   keybinds: {
-    open: "ctrl-s",
-    save: "ctrl-o",
-    saveAs: "ctrl-shift-s",
-    openRecent: "ctrl-shift-o",
-    showFile: "ctrl-shift-e",
-    sketchpad: "ctrl-alt-o",
-    format: "ctrl-alt-s",
-    quit: "ctrl-q",
-    run: "ctrl-enter",
-    clear: "ctrl-l",
+    editor: {
+      fold: "ctrl-f1",
+      unfold: "ctrl-shift-f1",
+      toggleFoldWidget: "f2",
+      foldall: "ctrl-alt-0",
+      unfoldall: "ctrl-alt-shift-0",
+      findnext: "ctrl-i",
+      findprevious: "ctrl-shift-i",
+      jumptomatching: "ctrl-\\",
+      selecttomatching: "ctrl-shift-\\",
+      openCommandPallete: "f1",
+      movelinesup: "ctrl-shift-up",
+      movelinesdown: "ctrl-shift-down",
+      copylinesup: "alt-up",
+      copylinesdown: "alt-down",
+      modifyNumberUp: "alt-shift-up",
+      modifyNumberDown: "alt-shift-down",
+      removeline: "ctrl-shift-k",
+      touppercase: "",
+      tolowercase: "",
+      togglerecording: "ctrl-u",
+      replaymacro: "ctrl-j",
+    },
+    code: {
+      run: "ctrl-enter",
+      clear: "ctrl-l",
+      format: "ctrl-alt-s",
+    },
+    files: {
+      open: "ctrl-s",
+      save: "ctrl-o",
+      saveAs: "ctrl-shift-s",
+      openRecent: "ctrl-shift-o",
+      showFile: "ctrl-shift-e",
+      sketchpad: "ctrl-alt-o",
+      quit: "ctrl-q",
+    },
   },
   internal: {
     recent: [],
@@ -114,39 +112,12 @@ const defaultOptions: Options = {
 
 export const options: Options = deepCopy<Options>(defaultOptions);
 
-function matches(a: Object, b: Object): boolean {
-  for (let i in b) {
-    if (!(i in a)) continue;
-    if (typeof b[i] !== typeof a[i]) return false;
-    if (b[i] && typeof b[i] === "object") {
-      if (!matches(b[i], a[i])) return false;
-    }
-  }
-  return true;
-}
-
 function isOptions(obj: Object): obj is Options {
   return matches(obj, defaultOptions);
 }
 
 export function save() {
   fs.writeFileSync(paths.internal, JSON.stringify(options.internal));
-}
-
-function assign(a: Object, b: Object): void {
-  for (let i in b) {
-    if (
-      i in a &&
-      a[i] &&
-      typeof a[i] === "object" &&
-      b[i] &&
-      typeof b[i] === "object"
-    ) {
-      assign(a[i], b[i]);
-    } else {
-      a[i] = b[i];
-    }
-  }
 }
 
 const vm = new NodeVM({
@@ -169,7 +140,10 @@ export function reload(): void {
 
   try {
     const toEval = fs.readFileSync(paths.config, "utf8");
-    assign(newOpts, vm.run(toEval));
+    const result = vm.run(toEval);
+    if (typeof result !== "object") throw "result not an object";
+    if (!result) throw "result is null";
+    assign(newOpts, result);
   } catch {}
 
   const allFilters: Array<string> = [];
@@ -185,11 +159,5 @@ export function reload(): void {
     fs.mkdirSync(options.filesDir, { recursive: true });
   }
 }
-
-const reloadEv = new Event("reload");
-fs.watchFile(paths.config, () => {
-  reload();
-  reloadEv.fire();
-});
 
 reload();

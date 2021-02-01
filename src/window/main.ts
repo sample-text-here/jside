@@ -11,8 +11,9 @@ import * as vm from "../libs/run";
 import * as files from "../libs/files";
 import { basename, extname } from "path";
 import * as ts from "../libs/compile";
-import { Event } from "../libs/events";
-import { paths, options } from "../libs/options";
+import event from "../libs/events";
+import { paths, options, reload } from "../libs/options";
+import { rebind } from "./scripts/editorKeybinds";
 
 const main = document.getElementById("main");
 const [edit, bar, consol] = [
@@ -20,7 +21,9 @@ const [edit, bar, consol] = [
   new Bar(main, "leftRight"),
   new Console(main),
 ];
-const recordingPopup = new Popup(edit.element, "recording", { dots: true });
+rebind(edit);
+
+const reloadPopup = new Popup(document.body, "reloaded!", { fade: 2000 });
 
 bar.element.style.gridArea = "resize";
 
@@ -30,12 +33,13 @@ let filePath = null,
 
 edit.listen("showSettingsMenu", "ctrl-,", () => {
   openPath(paths.config);
-  consol.raw("you are editing a config file", "warn");
 });
 
-new Event("reload").addListener(() => {
-  new Popup(document.body, "reloaded!", { fade: 2000 }).toggle();
-  ipcRenderer.send("updateRecent");
+const shouldReload = event("shouldReload");
+event("reload").addListener(() => {
+  reloadPopup.show();
+  reload();
+  rebind(edit);
 });
 
 edit.editor.session.on("change", () => {
@@ -47,50 +51,6 @@ edit.editor.session.on("change", () => {
   updated = true;
   updateTitle();
 });
-
-edit.listen("togglerecording", "ctrl-u", (editor) => {
-  editor.commands.toggleRecording(editor);
-  recordingPopup.toggle();
-});
-
-let numReplays = 0,
-  replayTimeout = null;
-edit.listen("replaymacro", "ctrl-j", (editor) => {
-  editor.commands.replay(editor);
-  clearTimeout(replayTimeout);
-  numReplays++;
-  new Popup(
-    edit.element,
-    "replay" + (numReplays <= 1 ? "" : " x" + numReplays),
-    { fade: 1000 }
-  ).toggle();
-  replayTimeout = setTimeout(() => {
-    numReplays = 0;
-  }, 2000);
-});
-
-edit.listen("movelinesup", "ctrl-shift-up", (editor) => editor.moveLinesUp());
-
-edit.listen("movelinesdown", "ctrl-shift-down", (editor) =>
-  editor.moveLinesDown()
-);
-
-edit.listen("copylinesup", "alt-up", (editor) => editor.copyLinesUp());
-
-edit.listen("copylinesdown", "alt-down", (editor) => editor.copyLinesDown());
-
-edit.listen("modifyNumberUp", "alt-shift-up", (editor) =>
-  editor.modifyNumber(1)
-);
-
-edit.listen("modifyNumberDown", "alt-shift-down", (editor) =>
-  editor.modifyNumber(-1)
-);
-
-edit.listen("removeline", "ctrl-shift-k", (editor) => editor.removeLines());
-
-edit.listen("touppercase", "", () => {});
-edit.listen("tolowercase", "", () => {});
 
 // let reopenIndex = 0,
 // reopenTimeout = null;
@@ -106,7 +66,7 @@ function postOpen(newPath: string): void {
   if (newPath) edit.editor.session.setValue(files.openFile(newPath));
   edit.mode(ext);
   if (newPath === paths.config)
-    consol.raw("you are editing a config file", "warn");
+    consol.createAppender(true, "#e6e155")("you are editing a config file");
 }
 
 function confirmOpen() {
@@ -121,6 +81,8 @@ function save(): void {
   updated = false;
   updateTitle();
   files.saveFile(filePath, edit.editor.session.getValue());
+  if (filePath === paths.config) shouldReload.fire();
+  files.touch(filePath);
 }
 
 function saveAs(): void {
@@ -157,6 +119,7 @@ function openPath(newPath: string, force = false): void {
   if (!newPath) return;
   if (!force && !confirmOpen()) return;
   postOpen(newPath);
+  if (filePath !== newPath) files.touch(newPath);
 }
 
 // TODO: cyclic open/close
@@ -175,8 +138,8 @@ function reopen(): void {
   // files.recentFile(newPath);
   // }, 2000);
   // }
-  const newPath = options.internal.recent[0];
-  if (newPath && confirmOpen()) files.recentFile(newPath);
+  const newPath = options.internal.recent[filePath ? 1 : 0];
+  if (newPath) openPath(newPath);
 }
 
 function openSketch(): void {
@@ -273,12 +236,6 @@ ipcRenderer.on("menu", (e, message) => {
     case "showFile":
       if (filePath) ipcRenderer.send("showFile", filePath);
       break;
-  }
-
-  if (/^perm-/.test(message)) {
-    const [type, toggle] = message.substr(5).split("-");
-    vm.setPerm(type, toggle === "on" ? true : false);
-    return;
   }
 });
 

@@ -13,7 +13,7 @@ function gotoEnd(editor) {
   editor.selection.moveTo(row + 1, column);
 }
 
-function queueScroll(el): void {
+function queueScroll(el: HTMLElement): void {
   const atBottom = el.scrollHeight - el.clientHeight <= el.scrollTop + 1;
   queueMicrotask(() => {
     window.requestAnimationFrame(() => {
@@ -114,32 +114,20 @@ export class Console extends Element {
     };
   }
 
-  log(obj): void {
-    queueScroll(this.content);
-    const disp = display(obj);
-    this.content.append(disp);
+  createAppender(raw = false, color = "", icon = "") {
+    if (color && !/^#[a-f0-9]{6}$/i.test(color)) throw "color must be a hex";
+    return (data): void => {
+      queueScroll(this.content);
+      const disp = raw ? create("div", ["display"], data) : display(data);
+      if (color) disp.style.background = color + "33";
+      this.content.append(disp);
+    };
   }
 
-  warn(obj): void {
-    queueScroll(this.content);
-    const disp = display(obj);
-    disp.classList.add("warn");
-    this.content.append(disp);
-  }
-
-  error(obj): void {
-    queueScroll(this.content);
-    const disp = display(obj);
-    disp.classList.add("error");
-    this.content.append(disp);
-  }
-
-  raw(str: string, kind?: string): void {
-    queueScroll(this.content);
-    const disp = create("div", ["display"], str);
-    if (kind) disp.classList.add(kind);
-    this.content.append(disp);
-  }
+  log = this.createAppender();
+  warn = this.createAppender(false, "#e6e155");
+  error = this.createAppender(false, "#ed5845");
+  raw = this.createAppender(true);
 
   resize(): void {
     this.input.editor.resize();

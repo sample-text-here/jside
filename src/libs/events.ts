@@ -1,16 +1,17 @@
-const events: Record<string, Event> = {}; // Events registry
+import { ipcMain, ipcRenderer, BrowserWindow } from "electron";
+const events: Record<string, Event> = {};
+export enum EventScope {
+  process,
+  global,
+}
 
-// TODO: make Event more intuitive
-// rn new Event("asdf") will not return a "new Event" if it already exists
 export class Event {
+  readonly name: string = "";
   listeners: Array<Function> = [];
-  name: string = "";
+  scope: EventScope = EventScope.global;
 
-  // create a new event
   constructor(name: string) {
-    if (Object.prototype.hasOwnProperty.call(events, name)) return events[name];
     this.name = name;
-    events[name] = this;
   }
 
   addListener(func: Function): Event {
@@ -26,6 +27,36 @@ export class Event {
 
   fire(...params: Array<unknown>): Event {
     this.listeners.forEach((i) => i(...params));
+    if (this.scope === EventScope.global) {
+      params.unshift(this.name);
+      if (process.type === "renderer") {
+        ipcRenderer.send("event", ...params);
+      } else {
+        BrowserWindow.getAllWindows().forEach((win) => {
+          win.webContents.send("event", ...params);
+        });
+      }
+    }
     return this;
   }
+}
+
+export default function eventsInterface(name: string) {
+  if (Object.prototype.hasOwnProperty.call(events, name)) return events[name];
+  const event = new Event(name);
+  events[name] = event;
+  return event;
+}
+
+function handleInterProcess(e, ...message: Array<unknown>) {
+  if (typeof message[0] !== "string") return;
+  const event = eventsInterface(message[0]);
+  if (event.scope !== EventScope.global) return;
+  event.listeners.forEach((i) => i(...message.slice(1)));
+}
+
+if (process.type === "renderer") {
+  ipcRenderer.on("event", handleInterProcess);
+} else {
+  ipcMain.on("event", handleInterProcess);
 }

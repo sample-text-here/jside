@@ -7,11 +7,13 @@ import {
   shell,
   dialog,
 } from "electron";
+import * as fs from "fs";
+import * as path from "path";
 import { generateMenu } from "./libs/menu";
 import { parse } from "./libs/args";
-import { options, reload } from "./libs/options";
+import { paths, options, reload } from "./libs/options";
 import { Bind } from "./libs/keybind";
-import * as path from "path";
+import event from "./libs/events";
 const args = parse();
 const allowed = ["js", "json", "md", "txt", "mlog"];
 const keys = [];
@@ -20,8 +22,6 @@ const keys = [];
 if (require("electron-squirrel-startup")) app.quit();
 
 function regenMenu(): void {
-  reload();
-
   const menu = generateMenu(args.options.includes("dev"));
   menu.append(
     new MenuItem({
@@ -35,9 +35,12 @@ function regenMenu(): void {
 
   while (keys.length > 0) keys.pop();
 
-  for (let i in options.keybinds) {
-    if (!["run", "clear", "format", "showFile"].includes(i)) continue;
-    keys.push({ bind: new Bind(options.keybinds[i]), message: i });
+  for (let category in options.keybinds) {
+    const binds = options.keybinds[category];
+    for (let bind in binds) {
+      if (!["run", "clear", "format", "showFile"].includes(bind)) continue;
+      keys.push({ bind: new Bind(binds[bind]), message: bind });
+    }
   }
 }
 
@@ -124,8 +127,15 @@ app.on("activate", () => {
   }
 });
 
-ipcMain.on("updateRecent", regenMenu);
+// TODO: only reload needed parts
+// seperate event for a full reload
+const reloadEv = event("reload");
+function reloadAll(): void {
+  reloadEv.fire();
+  reload();
+  regenMenu();
+}
 
-ipcMain.on("showFile", (e, file) => {
-  shell.showItemInFolder(file);
-});
+fs.watchFile(paths.config, reloadAll);
+event("shouldReload").addListener(reloadAll);
+event("showFile").addListener((file) => shell.showItemInFolder(file[0]));

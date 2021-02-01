@@ -4,8 +4,8 @@ import { options } from "./options";
 import { Bind } from "./keybind";
 import { basename } from "path";
 
-function getBind(name: string): string {
-  return new Bind(options.keybinds[name]).toString(true);
+function getBind(category: string, name: string): string {
+  return new Bind(options.keybinds[category][name]).toString(true);
 }
 
 function send(name: string, message: any): void {
@@ -16,49 +16,46 @@ function call(message: string) {
   return () => send("menu", message);
 }
 
-function perm(item: MenuItem) {
-  // TODO: convert to own event
-  // return () => send("perm", {});
-  return () => send("menu", item.id + "-" + item.checked);
-}
-
-export function generateMenu(dev = false): Menu {
-  const recent = [];
-  for (const file of options.internal.recent) {
-    recent.push(
+function generateRecents(fileNames: Array<string>): Menu {
+  const recents = new Menu();
+  for (const file of fileNames) {
+    recents.append(
       new MenuItem({
         label: basename(file),
         click: () => send("openRecent", file),
       })
     );
   }
+  return recents;
+}
 
+export function generateMenu(dev = false): Menu {
   const files = new Menu();
   files.append(
     new MenuItem({
       label: "open",
-      accelerator: getBind("open"),
+      accelerator: getBind("files", "open"),
       click: call("open"),
     })
   );
   files.append(
     new MenuItem({
       label: "save",
-      accelerator: getBind("save"),
+      accelerator: getBind("files", "save"),
       click: call("save"),
     })
   );
   files.append(
     new MenuItem({
       label: "save as",
-      accelerator: getBind("saveAs"),
+      accelerator: getBind("files", "saveAs"),
       click: call("saveAs"),
     })
   );
   files.append(
     new MenuItem({
       label: "show file",
-      accelerator: getBind("showFile"),
+      accelerator: getBind("files", "showFile"),
       click: call("showFile"),
     })
   );
@@ -68,20 +65,20 @@ export function generateMenu(dev = false): Menu {
       label: "recent",
       id: "recent",
       type: "submenu",
-      submenu: recent,
+      submenu: generateRecents(options.internal.recent),
     })
   );
   files.append(
     new MenuItem({
       label: "reopen file",
-      accelerator: getBind("openRecent"),
+      accelerator: getBind("files", "openRecent"),
       click: call("reopen"),
     })
   );
   files.append(
     new MenuItem({
       label: "sketchpad",
-      accelerator: getBind("sketchpad"),
+      accelerator: getBind("files", "sketchpad"),
       click: call("sketch"),
     })
   );
@@ -90,72 +87,7 @@ export function generateMenu(dev = false): Menu {
     new MenuItem({
       role: "quit",
       label: "quit",
-      accelerator: getBind("quit"),
-    })
-  );
-
-  const perms = new Menu();
-  perms.append(
-    new MenuItem({
-      label: "fs + path",
-      id: "perm-fs/path",
-      type: "checkbox",
-      checked: false,
-      click: perm,
-    })
-  );
-  perms.append(
-    new MenuItem({
-      label: "zlib",
-      id: "perm-zlib",
-      type: "checkbox",
-      checked: false,
-      click: perm,
-    })
-  );
-  perms.append(
-    new MenuItem({
-      label: "http",
-      id: "perm-http",
-      type: "checkbox",
-      checked: false,
-      click: perm,
-    })
-  );
-  perms.append(
-    new MenuItem({
-      label: "https",
-      id: "perm-https",
-      type: "checkbox",
-      checked: false,
-      click: perm,
-    })
-  );
-  perms.append(
-    new MenuItem({
-      label: "os",
-      id: "perm-os",
-      type: "checkbox",
-      checked: false,
-      click: perm,
-    })
-  );
-  perms.append(
-    new MenuItem({
-      label: "events",
-      id: "perm-events",
-      type: "checkbox",
-      checked: false,
-      click: perm,
-    })
-  );
-  perms.append(
-    new MenuItem({
-      label: "crypto",
-      id: "perm-crypto",
-      type: "checkbox",
-      checked: false,
-      click: perm,
+      accelerator: getBind("files", "quit"),
     })
   );
 
@@ -171,7 +103,7 @@ export function generateMenu(dev = false): Menu {
   edit.append(
     new MenuItem({
       label: "format code",
-      accelerator: getBind("format"),
+      accelerator: getBind("code", "format"),
       click: call("format"),
     })
   );
@@ -180,14 +112,14 @@ export function generateMenu(dev = false): Menu {
   code.append(
     new MenuItem({
       label: "run",
-      accelerator: getBind("run"),
+      accelerator: getBind("code", "run"),
       click: call("run"),
     })
   );
   code.append(
     new MenuItem({
       label: "clear console",
-      accelerator: getBind("clear"),
+      accelerator: getBind("code", "clear"),
       click: call("clear"),
     })
   );
@@ -195,9 +127,6 @@ export function generateMenu(dev = false): Menu {
   const menu = new Menu();
   menu.append(new MenuItem({ label: "file", type: "submenu", submenu: files }));
   menu.append(new MenuItem({ label: "edit", type: "submenu", submenu: edit }));
-  menu.append(
-    new MenuItem({ label: "perms", type: "submenu", submenu: perms })
-  );
   menu.append(new MenuItem({ label: "code", type: "submenu", submenu: code }));
   if (dev) menu.append(new MenuItem({ role: "viewMenu" }));
   return menu;

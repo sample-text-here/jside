@@ -52,7 +52,6 @@ export class FileHandler {
     if (path) this.value = files.openFile(path);
     this.edit.mode(this.ext || "js");
     if (path === util.paths.config) ev.openedConfig.fire();
-    files.touch(path);
     this.updated = false;
     ev.open.fire(path);
   }
@@ -70,7 +69,6 @@ export class FileHandler {
     if (!this.path) return;
     this.updated = false;
     files.saveFile(this.path, this.value);
-    files.touch(this.path);
     if (this.path === util.paths.config) ev.reload.fire();
     ev.save.fire(this.path);
   }

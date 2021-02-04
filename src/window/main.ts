@@ -10,7 +10,7 @@ import { formatWithCursor } from "prettier";
 import { run as runInVm, VirtualMachine } from "../libs/run";
 import * as ts from "../libs/compile";
 import event from "../libs/events";
-import { options, reload } from "../libs/options";
+import { options, reload, save } from "../libs/options";
 import { paths } from "../libs/util";
 import { Keybinds } from "./scripts/editorKeybinds";
 import { FileHandler } from "./scripts/fileHandler";
@@ -25,10 +25,12 @@ bar.element.style.gridArea = "resize";
 const vm = new VirtualMachine();
 const files = new FileHandler(edit);
 const keybinds = new Keybinds(edit, options.keybinds.editor);
+const recent = options.internal.recent;
 const ev = {
-  showFile: event("showFile"),
+  showFile: event("showFile", true),
   openedConfig: event("warn.config"),
   reload: event("reload", true),
+  reloadRecent: event("reload.recent", true),
   open: event("file.open"),
 };
 
@@ -59,6 +61,34 @@ edit.editor.session.on("change", () => {
   files.updated = true;
   updateTitle();
 });
+
+function touch(path) {
+  const index = recent.indexOf(path);
+  if (index >= 0) recent.splice(index, 1);
+  while (recent.length > options.maxRecent) recent.pop();
+  recent.unshift(path);
+  save();
+  ev.reloadRecent.fire();
+}
+
+let reopenIndex = 0;
+let reopenTimeout;
+function openThing(reopen = false): void {
+  clearTimeout(reopenTimeout);
+  reopenIndex += reopen ? 1 : -1;
+  reopenIndex = Math.min(reopenIndex, recent.length - 1);
+  if (reopenIndex < 0) {
+    files.open();
+    touch(files.path);
+    reopenIndex = 0;
+    return;
+  }
+  files.openPath(recent[reopenIndex]);
+  reopenTimeout = setTimeout(() => {
+    touch(files.path);
+    reopenIndex = 0;
+  }, 1000);
+}
 
 function format(): void {
   if (!["js", "ts", "json", "md"].includes(files.ext)) return;
@@ -135,12 +165,14 @@ ipcRenderer.on("menu", (e, message) => {
   switch (message) {
     case "save":
       files.save();
+      touch(files.path);
       break;
     case "saveAs":
       files.saveAs();
+      touch(files.path);
       break;
     case "open":
-      files.open();
+      openThing();
       break;
     case "format":
       format();
@@ -152,7 +184,7 @@ ipcRenderer.on("menu", (e, message) => {
       consol.clear();
       break;
     case "reopen":
-      // reopen();
+      openThing(true);
       break;
     case "sketch":
       files.openPath(paths.sketch);
@@ -166,11 +198,12 @@ ipcRenderer.on("menu", (e, message) => {
 
 ipcRenderer.on("openRecent", (e, path) => {
   files.openPath(path);
+  touch(files.path);
 });
 
 function updateTitle(): void {
   let title = "jside";
-  if (files.path) {
+  if (files.path && files.path !== paths.sketch) {
     title += " - " + files.name;
     if (files.updated) title += "*";
   }

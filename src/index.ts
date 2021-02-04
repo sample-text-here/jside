@@ -27,7 +27,6 @@ function regenMenu(): void {
   menu.append(
     new MenuItem({
       label: "help",
-      role: "help",
       click: (): void => {
         createWindow("help.html").setMenu(null);
       },
@@ -91,7 +90,6 @@ function createSession(): BrowserWindow {
     for (const i of keys) {
       if (press.isSame(i.bind)) {
         e.preventDefault();
-        win.webContents.send("menu", i.message);
         switch (i.message) {
           case "quit":
             win.close();
@@ -149,5 +147,5 @@ function reloadRecent(): void {
 
 fs.watchFile(paths.config, reloadAll);
 event("reload.force", true).addListener(reloadAll);
-event("reload.recents", true).addListener(reloadRecent);
+event("reload.recent", true).addListener(reloadRecent);
 event("showFile", true).addListener((file) => shell.showItemInFolder(file));

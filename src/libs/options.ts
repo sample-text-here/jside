@@ -80,7 +80,7 @@ const defaultOptions: Options = {
       open: "ctrl-o",
       save: "ctrl-s",
       saveAs: "ctrl-shift-s",
-      openRecent: "ctrl-shift-o",
+      reopen: "ctrl-shift-o",
       showFile: "ctrl-shift-e",
       sketchpad: "ctrl-alt-o",
       new: "ctrl-n",

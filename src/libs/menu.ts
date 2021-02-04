@@ -71,7 +71,7 @@ export function generateMenu(dev = false): Menu {
   files.append(
     new MenuItem({
       label: "reopen file",
-      accelerator: getBind("files", "openRecent"),
+      accelerator: getBind("files", "reopen"),
       click: call("reopen"),
     })
   );

@@ -8,7 +8,7 @@ export enum EventScope {
 export class Event {
   readonly name: string = "";
   listeners: Array<Function> = [];
-  scope: EventScope = EventScope.global;
+  scope: EventScope = EventScope.process;
 
   constructor(name: string) {
     this.name = name;
@@ -41,9 +41,10 @@ export class Event {
   }
 }
 
-export default function eventsInterface(name: string) {
+export default function eventsInterface(name: string, isGlobal = false) {
   if (Object.prototype.hasOwnProperty.call(events, name)) return events[name];
   const event = new Event(name);
+  if (isGlobal) event.scope = EventScope.global;
   events[name] = event;
   return event;
 }

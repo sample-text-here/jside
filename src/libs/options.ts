@@ -93,13 +93,14 @@ const defaultOptions: Options = {
       format: "ctrl-alt-s",
     },
     files: {
-      open: "ctrl-s",
-      save: "ctrl-o",
+      open: "ctrl-o",
+      save: "ctrl-s",
       saveAs: "ctrl-shift-s",
       openRecent: "ctrl-shift-o",
       showFile: "ctrl-shift-e",
       sketchpad: "ctrl-alt-o",
       quit: "ctrl-q",
+      config: "ctrl-,",
     },
   },
   internal: {
@@ -129,6 +130,7 @@ const vm = new NodeVM({
 
 export function reload(): void {
   const newOpts: Options = deepCopy<Options>(defaultOptions);
+
   try {
     const json = JSON.parse(fs.readFileSync(paths.internal, "utf8"));
     if (typeof json !== "object") throw "not object";
@@ -144,7 +146,9 @@ export function reload(): void {
     if (typeof result !== "object") throw "result not an object";
     if (!result) throw "result is null";
     assign(newOpts, result);
-  } catch {}
+  } catch (err) {
+    console.error(err);
+  }
 
   const allFilters: Array<string> = [];
   for (let i of newOpts.filters) {
@@ -152,7 +156,7 @@ export function reload(): void {
   }
   newOpts.filters.push({ name: "all", extensions: allFilters });
 
-  if (!isOptions(options)) throw "invalid options";
+  if (!isOptions(newOpts)) throw "invalid options";
   Object.assign(options, newOpts);
 
   if (!fs.existsSync(options.filesDir)) {

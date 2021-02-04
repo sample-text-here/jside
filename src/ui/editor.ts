@@ -77,6 +77,9 @@ export class Editor extends Element {
       case "js":
         session.setMode("ace/mode/javascript");
         break;
+      case "ts":
+        session.setMode("ace/mode/typescript");
+        break;
       case "json":
         session.setMode("ace/mode/json");
         break;

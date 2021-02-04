@@ -8,161 +8,85 @@ import { Bar } from "../ui/dragBar";
 import { Popup } from "../ui/popup";
 import { formatWithCursor } from "prettier";
 import * as vm from "../libs/run";
-import * as files from "../libs/files";
-import { basename, extname } from "path";
 import * as ts from "../libs/compile";
 import event from "../libs/events";
 import { paths, options, reload } from "../libs/options";
 import { rebind } from "./scripts/editorKeybinds";
+import { FileHandler } from "./scripts/fileHandler";
 
 const main = document.getElementById("main");
-const [edit, bar, consol] = [
-  new Editor(main),
-  new Bar(main, "leftRight"),
-  new Console(main),
-];
-rebind(edit);
-
-const reloadPopup = new Popup(document.body, "reloaded!", { fade: 2000 });
+const edit = new Editor(main);
+const bar = new Bar(main, "leftRight");
+const consol = new Console(main);
+const reloadPopup = new Popup(document.body, "reloaded!", { fade: 1000 });
 
 bar.element.style.gridArea = "resize";
+rebind(edit);
 
-let filePath = null,
-  ext = "js",
-  updated = false;
+const files = new FileHandler(edit);
+const ev = {
+  showFile: event("showFile"),
+  openedConfig: event("warn.config"),
+  reload: event("reload", true),
+  open: event("file.open"),
+};
 
-edit.listen("showSettingsMenu", "ctrl-,", () => {
-  openPath(paths.config);
+ev.openedConfig.addListener(() => {
+  consol.createAppender(true, "#e6e155")("you are editing a config file");
 });
 
-const shouldReload = event("shouldReload");
-event("reload").addListener(() => {
+ev.reload.addListener(() => {
   reloadPopup.show();
   reload();
   rebind(edit);
+  edit.listen("showSettingsMenu", options.keybinds.files.config, () => {
+    files.openPath(paths.config);
+  });
+});
+
+ev.open.addListener(() => {
+  files.updated = false;
+  updateTitle();
+
+  // ace editor bug
+  window.blur();
+  window.focus();
 });
 
 edit.editor.session.on("change", () => {
-  if (filePath === null) {
-    files.saveSketch(edit.editor.session.getValue());
-  } else {
-    files.backup(edit.editor.session.getValue());
-  }
-  updated = true;
+  files.backup();
+  files.updated = true;
   updateTitle();
 });
 
-// let reopenIndex = 0,
-// reopenTimeout = null;
-
-// TODO: make file management less awful
-function postOpen(newPath: string): void {
-  queueMicrotask(() => {
-    updated = false;
-    updateTitle();
-  });
-  filePath = newPath;
-  ext = extname(newPath || ".js").replace(/^\./, "");
-  if (newPath) edit.editor.session.setValue(files.openFile(newPath));
-  edit.mode(ext);
-  if (newPath === paths.config)
-    consol.createAppender(true, "#e6e155")("you are editing a config file");
-}
-
-function confirmOpen() {
-  if (updated && filePath && !window.confirm("your file isnt saved, continue?"))
-    return false;
-  return true;
-}
-
-function save(): void {
-  if (!filePath) filePath = files.fileSave();
-  if (!filePath) return;
-  updated = false;
-  updateTitle();
-  files.saveFile(filePath, edit.editor.session.getValue());
-  if (filePath === paths.config) shouldReload.fire();
-  files.touch(filePath);
-}
-
-function saveAs(): void {
-  const newPath = files.fileSave();
-  if (!filePath) return;
-  updated = false;
-  updateTitle();
-  files.saveFile(newPath, edit.editor.session.getValue());
-}
-
-function open(): void {
-  if (!confirmOpen()) return;
-  // reopenIndex--;
-  // if (reopenIndex < 0) {
-  // reopenIndex = -1;
-  // openPath((files.fileOpen() || [])[0], true);
-  // return;
-  // }
-  // const newPath = options.internal.recent[reopenIndex];
-  // if (newPath) {
-  // files.openFileKeepPath(newPath);
-  // postOpen(newPath);
-  // clearTimeout(reopenTimeout);
-  // reopenTimeout = setTimeout(() => {
-  // files.recentFile(newPath);
-  // reopenIndex = -1;
-  // }, 2000);
-  // return;
-  // }
-  openPath((files.fileOpen() || [])[0], true);
-}
-
-function openPath(newPath: string, force = false): void {
-  if (!newPath) return;
-  if (!force && !confirmOpen()) return;
-  postOpen(newPath);
-  if (filePath !== newPath) files.touch(newPath);
-}
-
-// TODO: cyclic open/close
-function reopen(): void {
-  // reopenIndex++;
-  // if (reopenIndex >= options.maxRecent) {
-  // reopenIndex = options.maxRecent - 1;
-  // }
-  // const newPath = options.internal.recent[reopenIndex];
-  // if (newPath) {
-  // files.openFileKeepPath(newPath);
-  // postOpen(newPath);
-  // clearTimeout(reopenTimeout);
-  // reopenTimeout = setTimeout(() => {
-  // reopenIndex = -1;
-  // files.recentFile(newPath);
-  // }, 2000);
-  // }
-  const newPath = options.internal.recent[filePath ? 1 : 0];
-  if (newPath) openPath(newPath);
-}
-
-function openSketch(): void {
-  if (!confirmOpen()) return;
-  edit.editor.session.setValue(files.loadSketch());
-  postOpen(null);
-}
-
 function format(): void {
-  if (ext === "txt") return;
+  if (!["js", "ts", "json", "md"].includes(files.ext)) return;
   const editor = edit.editor;
   const cursor = editor.selection.getCursor();
   const index = editor.session.doc.positionToIndex(cursor);
   const value = editor.session.getValue();
+  let parser = null;
+  switch (files.ext) {
+    case "js":
+      parser = "babel";
+      break;
+    case "ts":
+      parser = "babel-typescript";
+      break;
+    case "json":
+    case "md":
+      parser = files.ext;
+      break;
+  }
+  if (!parser) return;
   const result = formatWithCursor(value, {
     cursorOffset: index,
-    parser: ext === "js" ? "babel" : ext,
+    parser,
   });
   editor.session.doc.setValue(result.formatted);
   const position = editor.session.doc.indexToPosition(result.cursorOffset);
   editor.clearSelection();
   editor.moveCursorToPosition(position);
-  updateTitle();
 }
 
 bar.dragged = function (e): void {
@@ -190,9 +114,8 @@ consol.run = (code): void => {
 };
 
 function run(): void {
-  const code = edit.editor.session.getValue();
-  console.log(ext);
-  switch (ext) {
+  const code = files.value;
+  switch (files.ext) {
     case "js":
       const res = vm.run(code);
       consol[res.err ? "error" : "log"](res.value);
@@ -210,13 +133,13 @@ function run(): void {
 ipcRenderer.on("menu", (e, message) => {
   switch (message) {
     case "save":
-      save();
+      files.save();
       break;
     case "saveAs":
-      saveAs();
+      files.saveAs();
       break;
     case "open":
-      open();
+      files.open();
       break;
     case "format":
       format();
@@ -228,27 +151,29 @@ ipcRenderer.on("menu", (e, message) => {
       consol.clear();
       break;
     case "reopen":
-      reopen();
+      // reopen();
       break;
     case "sketch":
-      openSketch();
+      files.openPath(paths.sketch);
       break;
     case "showFile":
-      if (filePath) ipcRenderer.send("showFile", filePath);
+      if (files.path) ev.showFile.fire(files.path);
       break;
   }
+  updateTitle();
 });
 
 ipcRenderer.on("openRecent", (e, path) => {
-  openPath(path);
+  files.openPath(path);
 });
 
 function updateTitle(): void {
   let title = "jside";
-  if (filePath) {
-    title += " - " + basename(filePath) + (updated ? "*" : "");
+  if (files.path) {
+    title += " - " + files.name;
+    if (files.updated) title += "*";
   }
   document.title = title;
 }
 
-edit.editor.session.doc.setValue(files.loadSketch());
+files.openPath(paths.sketch);

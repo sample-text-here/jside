@@ -6,17 +6,18 @@ import {
   MenuItem,
   shell,
   dialog,
+  Notification,
 } from "electron";
 import * as fs from "fs";
 import * as path from "path";
-import { generateMenu } from "./libs/menu";
+import { generateMenu, generateRecents } from "./libs/menu";
 import { parse } from "./libs/args";
 import { paths, options, reload } from "./libs/options";
 import { Bind } from "./libs/keybind";
 import event from "./libs/events";
 const args = parse();
-const allowed = ["js", "json", "md", "txt", "mlog"];
 const keys = [];
+const sessions = [];
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require("electron-squirrel-startup")) app.quit();
@@ -27,7 +28,9 @@ function regenMenu(): void {
     new MenuItem({
       label: "help",
       role: "help",
-      click: (): void => showHelp(),
+      click: (): void => {
+        createWindow("help.html").setMenu(null);
+      },
     })
   );
 
@@ -35,31 +38,48 @@ function regenMenu(): void {
 
   while (keys.length > 0) keys.pop();
 
-  for (let category in options.keybinds) {
-    const binds = options.keybinds[category];
-    for (let bind in binds) {
-      if (!["run", "clear", "format", "showFile"].includes(bind)) continue;
-      keys.push({ bind: new Bind(binds[bind]), message: bind });
-    }
+  const binds = options.keybinds;
+  const override = { ...binds.files, ...binds.code };
+  for (let bind in override) {
+    keys.push({ bind: new Bind(override[bind]), message: bind });
+  }
+
+  if (!new Bind(binds.files.config).isValid()) {
+    new Notification({
+      title: "achievement unlocked",
+      body: "why did you do that",
+    }).show();
   }
 }
 
-function createWindow(): BrowserWindow {
+function createWindow(file: string, options = {}): BrowserWindow {
   const win = new BrowserWindow({
+    height: 350,
+    width: 350,
+    show: false,
+    // TODO: make an icon that doesn't make my eyes bleed
+    // icon: path.join(__dirname, "assets", "icon.png"),
+    ...options,
+  });
+  sessions.push(win);
+
+  win.loadFile(path.join(__dirname, "window", file));
+
+  win.once("ready-to-show", () => {
+    win.show();
+  });
+
+  return win;
+}
+
+function createSession(): BrowserWindow {
+  const win = createWindow("index.html", {
     height: 400,
     width: 600,
     webPreferences: {
       nodeIntegration: true,
       enableRemoteModule: true,
     },
-    show: false,
-  });
-
-  // and load the index.html of the app.
-  win.loadFile(path.join(__dirname, "window/index.html"));
-
-  win.once("ready-to-show", () => {
-    win.show();
   });
 
   win.webContents.on("before-input-event", (e, input) => {
@@ -68,12 +88,18 @@ function createWindow(): BrowserWindow {
     press.shift = input.shift;
     press.alt = input.alt;
     if (!press.isValid()) return;
-    for (const i of keys) {
+    for (let i of keys) {
       if (press.isSame(i.bind)) {
         e.preventDefault();
-
         win.webContents.send("menu", i.message);
-        break;
+        if (i.message === "quit") {
+          win.close();
+          const index = sessions.indexOf(win);
+          if (index < 0) return;
+          sessions.splice(index, 1);
+          if (sessions.length <= 0) return;
+        }
+        return;
       }
     }
   });
@@ -81,61 +107,37 @@ function createWindow(): BrowserWindow {
   return win;
 }
 
-function showHelp(): void {
-  const help = new BrowserWindow({
-    height: 350,
-    width: 350,
-    show: false,
-  });
-
-  help.loadFile(path.join(__dirname, "window/help.html"));
-  help.setMenu(null);
-
-  help.once("ready-to-show", () => {
-    help.show();
-  });
-}
-
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.on("ready", () => {
-  const win = createWindow();
+  reload();
+  regenMenu();
+  const win = createSession();
   win.once("ready-to-show", () => {
     if (args.file) {
-      // (ab)use openRecent
       win.webContents.send("openRecent", args.file);
     }
   });
-  regenMenu();
 });
 
-// Quit when all windows are closed, except on macOS. There, it's common
-// for applications and their menu bar to stay active until the user quits
-// explicitly with Cmd + Q.
-app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") {
-    app.quit();
-  }
-});
-
-app.on("activate", () => {
-  // On OS X it's common to re-create a window in the app when the
-  // dock icon is clicked and there are no other windows open.
-  if (BrowserWindow.getAllWindows().length === 0) {
-    createWindow();
-  }
-});
+app.on("window-all-closed", app.quit);
 
 // TODO: only reload needed parts
 // seperate event for a full reload
-const reloadEv = event("reload");
+const reloadEv = event("reload", true);
 function reloadAll(): void {
   reloadEv.fire();
   reload();
   regenMenu();
 }
 
+function reloadRecent(): void {
+  reload();
+  regenMenu();
+}
+
 fs.watchFile(paths.config, reloadAll);
-event("shouldReload").addListener(reloadAll);
-event("showFile").addListener((file) => shell.showItemInFolder(file[0]));
+event("reload.force", true).addListener(reloadAll);
+event("reload.recents", true).addListener(reloadRecent);
+event("showFile", true).addListener((file) => shell.showItemInFolder(file));

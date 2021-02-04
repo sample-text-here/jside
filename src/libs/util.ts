@@ -5,7 +5,7 @@ export function deepCopyArray(arr: Array<any>) {
       if (i instanceof Array) {
         out.push(deepCopyArray(i));
       } else {
-        out.push(deepCopy<Object>(i));
+        out.push(deepCopy(i));
       }
     } else {
       out.push(i);
@@ -21,7 +21,7 @@ export function deepCopy<T = Object>(obj: Object): T {
       if (obj[i] instanceof Array) {
         out[i] = deepCopyArray(obj[i]);
       } else {
-        out[i] = deepCopy<Object>(obj[i]);
+        out[i] = deepCopy(obj[i]);
       }
     } else {
       out[i] = obj[i];

@@ -16,7 +16,7 @@ function call(message: string) {
   return () => send("menu", message);
 }
 
-function generateRecents(fileNames: Array<string>): Menu {
+export function generateRecents(fileNames: Array<string>): Menu {
   const recents = new Menu();
   for (const file of fileNames) {
     recents.append(

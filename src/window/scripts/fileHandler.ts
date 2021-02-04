@@ -1,94 +1,139 @@
-// TODO: clean up and use this file instead
-/*
-function postOpen(newPath: string): void {
-  queueMicrotask(() => {
-    updated = false;
-    updateTitle();
-  });
-  filePath = newPath;
-  ext = extname(newPath || ".js").replace(/^\./, "");
-  if (newPath) edit.editor.session.setValue(files.openFile(newPath));
-  edit.mode(ext);
-  if (newPath === paths.config)
-    consol.raw("you are editing a config file", "warn");
-}
+import * as files from "../../libs/files";
+import { basename, extname } from "path";
+import { paths, options } from "../../libs/options";
+import event from "../../libs/events";
+import { Editor } from "../../ui/editor";
 
-function confirmOpen() {
-  if (updated && filePath && !window.confirm("your file isnt saved, continue?"))
+const ev = {
+  open: event("file.open"),
+  save: event("file.save"),
+  saveAs: event("file.saveAs"),
+  reload: event("reload.force"),
+  openedConfig: event("warn.config"),
+};
+
+export class FileHandler {
+  path: string = null;
+  edit: Editor = null;
+  updated = false;
+
+  constructor(edit: Editor) {
+    this.edit = edit;
+  }
+
+  get ext() {
+    return extname(this.path).replace(/^\./, "");
+  }
+
+  get name() {
+    return basename(this.path);
+  }
+
+  get value() {
+    return this.edit.editor.session.getValue();
+  }
+
+  set value(val) {
+    this.edit.editor.session.setValue(val);
+  }
+
+  confirm() {
+    if (!this.updated) return true;
+    if (!this.path) return true;
+    if (window.confirm("your file isnt saved, continue?")) return true;
     return false;
-  return true;
-}
+  }
 
-function save(): void {
-  if (!filePath) filePath = files.fileSave();
-  if (!filePath) return;
-  updated = false;
-  updateTitle();
-  files.saveFile(filePath, edit.editor.session.getValue());
-  if (filePath === paths.config) shouldReload.fire();
-  if(filePath !== newPath) files.recentFile(newPath);
-}
+  openPath(path: string): void {
+    if (!path) return;
+    if (!this.confirm()) return;
+    this.path = path;
+    if (path) this.value = files.openFile(path);
+    this.edit.mode(this.ext || "js");
+    if (path === paths.config) ev.openedConfig.fire();
+    files.touch(path);
+    this.updated = false;
+    ev.open.fire(path);
+  }
 
-function saveAs(): void {
-  const newPath = files.fileSave();
-  if (!filePath) return;
-  updated = false;
-  updateTitle();
-  files.saveFile(newPath, edit.editor.session.getValue());
-}
+  open(): void {
+    if (!this.confirm()) return;
+    const oldPath = this.path;
+    this.path = null;
+    this.openPath(files.fileOpen());
+    if (!this.path) this.path = oldPath;
+  }
 
-function open(): void {
-  if (!confirmOpen()) return;
-  // reopenIndex--;
-  // if (reopenIndex < 0) {
-  // reopenIndex = -1;
-  // openPath((files.fileOpen() || [])[0], true);
-  // return;
-  // }
-  // const newPath = options.internal.recent[reopenIndex];
-  // if (newPath) {
-  // files.openFileKeepPath(newPath);
-  // postOpen(newPath);
-  // clearTimeout(reopenTimeout);
-  // reopenTimeout = setTimeout(() => {
-  // files.recentFile(newPath);
-  // reopenIndex = -1;
-  // }, 2000);
-  // return;
-  // }
-  openPath((files.fileOpen() || [])[0], true);
-}
+  save(): void {
+    if (!this.path) this.path = files.fileSave();
+    if (!this.path) return;
+    this.updated = false;
+    files.saveFile(this.path, this.value);
+    files.touch(this.path);
+    if (this.path === paths.config) ev.reload.fire();
+    ev.save.fire(this.path);
+  }
 
-function openPath(newPath: string, force = false): void {
-  if (!newPath) return;
-  if (!force && !confirmOpen()) return;
-  postOpen(newPath);
-  if(filePath !== newPath) files.recentFile(newPath);
+  saveAs(): void {
+    const oldPath = this.path;
+    this.path = null;
+    this.save();
+    if (!this.path) {
+      this.path = oldPath;
+    } else {
+      ev.saveAs.fire(this.path);
+    }
+  }
+
+  backup() {
+    const path = this.path ? options.backup : paths.sketch;
+    files.saveFile(path, this.value);
+  }
 }
 
 // TODO: cyclic open/close
-function reopen(): void {
-  // reopenIndex++;
-  // if (reopenIndex >= options.maxRecent) {
-  // reopenIndex = options.maxRecent - 1;
-  // }
-  // const newPath = options.internal.recent[reopenIndex];
-  // if (newPath) {
-  // files.openFileKeepPath(newPath);
-  // postOpen(newPath);
-  // clearTimeout(reopenTimeout);
-  // reopenTimeout = setTimeout(() => {
-  // reopenIndex = -1;
-  // files.recentFile(newPath);
-  // }, 2000);
-  // }
-  const newPath = options.internal.recent[filePath ? 1 : 0];
-  if (newPath) openPath(newPath);
-}
+// TODO: also ~~fix~~ re-add reopen, it's buggy
 
-function openSketch(): void {
-  if (!confirmOpen()) return;
-  edit.editor.session.setValue(files.loadSketch());
-  postOpen(null);
-}
-*/
+// let reopenIndex = 0,
+// reopenTimeout = null;
+
+// function open(): void {
+// if (!confirmOpen()) return;
+// reopenIndex--;
+// if (reopenIndex < 0) {
+// reopenIndex = -1;
+// openPath((files.fileOpen() || [])[0], true);
+// return;
+// }
+// const newPath = options.internal.recent[reopenIndex];
+// if (newPath) {
+// files.openFileKeepPath(newPath);
+// postOpen(newPath);
+// clearTimeout(reopenTimeout);
+// reopenTimeout = setTimeout(() => {
+// files.recentFile(newPath);
+// reopenIndex = -1;
+// }, 2000);
+// return;
+// }
+// openPath((files.fileOpen() || [])[0], true);
+// }
+
+// function reopen(): void {
+// reopenIndex++;
+// if (reopenIndex >= options.maxRecent) {
+// reopenIndex = options.maxRecent - 1;
+// }
+// const newPath = options.internal.recent[reopenIndex];
+// if (newPath) {
+// files.openFileKeepPath(newPath);
+// postOpen(newPath);
+// clearTimeout(reopenTimeout);
+// reopenTimeout = setTimeout(() => {
+// reopenIndex = -1;
+// files.recentFile(newPath);
+// }, 2000);
+// }
+// const newPath = options.internal.recent[filePath ? 1 : 0];
+// if (newPath) openPath(newPath);
+// }

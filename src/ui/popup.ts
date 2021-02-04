@@ -26,6 +26,7 @@ export class Popup extends Element {
     super();
     this.options = { ...defaultOpts, ...options };
     const el = create("div", ["popup"], text);
+    el.style.display = "none";
     if (this.options.dots) el.classList.add("dots");
     parent.append(el);
     this.element = el;

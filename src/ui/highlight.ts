@@ -7,7 +7,7 @@ export class Highlight extends Element {
     super();
     const element = create("div", ["highlighted"]);
     parent.append(element);
-    let e = new Editor(element);
+    const e = new Editor(element);
     e.editor.setOptions({
       enableBasicAutocompletion: false,
       enableSnippets: false,

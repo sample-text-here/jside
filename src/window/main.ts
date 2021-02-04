@@ -7,11 +7,12 @@ import { Console } from "../ui/console";
 import { Bar } from "../ui/dragBar";
 import { Popup } from "../ui/popup";
 import { formatWithCursor } from "prettier";
-import * as vm from "../libs/run";
+import { run as runInVm, VirtualMachine } from "../libs/run";
 import * as ts from "../libs/compile";
 import event from "../libs/events";
-import { paths, options, reload } from "../libs/options";
-import { rebind } from "./scripts/editorKeybinds";
+import { options, reload } from "../libs/options";
+import { paths } from "../libs/util";
+import { Keybinds } from "./scripts/editorKeybinds";
 import { FileHandler } from "./scripts/fileHandler";
 
 const main = document.getElementById("main");
@@ -19,11 +20,11 @@ const edit = new Editor(main);
 const bar = new Bar(main, "leftRight");
 const consol = new Console(main);
 const reloadPopup = new Popup(document.body, "reloaded!", { fade: 1000 });
-
 bar.element.style.gridArea = "resize";
-rebind(edit);
 
+const vm = new VirtualMachine();
 const files = new FileHandler(edit);
+const keybinds = new Keybinds(edit, options.keybinds.editor);
 const ev = {
   showFile: event("showFile"),
   openedConfig: event("warn.config"),
@@ -38,7 +39,7 @@ ev.openedConfig.addListener(() => {
 ev.reload.addListener(() => {
   reloadPopup.show();
   reload();
-  rebind(edit);
+  keybinds.rebind(options.keybinds.editor);
   edit.listen("showSettingsMenu", options.keybinds.files.config, () => {
     files.openPath(paths.config);
   });
@@ -105,11 +106,11 @@ bar.dragged = function (e): void {
   consol.resize();
 };
 
-vm.setConsole(consol);
+vm.console = consol;
 
 consol.run = (code): void => {
-  const res = vm.runLess(code);
-  consol[res.err ? "error" : "log"](res.value);
+  const res = runInVm(code);
+  consol[res.err ? "error" : "log"](res.result);
   updateTitle();
 };
 
@@ -118,7 +119,7 @@ function run(): void {
   switch (files.ext) {
     case "js":
       const res = vm.run(code);
-      consol[res.err ? "error" : "log"](res.value);
+      consol[res.err ? "error" : "log"](res.result);
       break;
     case "json":
       try {

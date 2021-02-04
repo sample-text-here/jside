@@ -2,70 +2,76 @@
 
 // TODO share context between vms
 import { NodeVM, VM, VMScript } from "vm2";
-let consol;
-const sandbox = {};
-const vm = new VM({ sandbox, timeout: 3000 });
-const nodevm = new NodeVM({
-  sandbox,
-  require: {
-    external: false,
-    builtin: ["*"],
-  },
-  wrapper: "none",
-  console: "redirect",
-})
-  .on("console.log", (...msg) => {
-    if (consol) msg.forEach((i) => consol.log(i));
-  })
-  .on("console.info", (...msg) => {
-    if (consol) msg.forEach((i) => consol.log(i));
-  })
-  .on("console.warn", (...msg) => {
-    if (consol) msg.forEach((i) => consol.warn(i));
-  })
-  .on("console.error", (...msg) => {
-    if (consol) msg.forEach((i) => consol.error(i));
-  });
-
-// resets the vm sandbox
-export function reset(): void {
-  for (const i in sandbox) {
-    delete sandbox[i];
-  }
-}
+import { Console } from "../ui/console";
+const defaultVM = new VM({ timeout: 3000 });
 
 interface VMResult {
-  value: unknown;
+  result: unknown;
   err: boolean;
 }
 
-// run code as a nodejs vm
-export function run(code: string, fileName = "something.js"): VMResult {
+export function run(code: string): VMResult {
   try {
     return {
-      value: nodevm.run(new VMScript(code, fileName)),
+      result: defaultVM.run(code),
       err: false,
     };
   } catch (err) {
-    return { value: err, err: true };
+    return { result: err, err: true };
   }
 }
 
-// run code in a less fancy vm, for the console
-export function runLess(code: string): VMResult {
-  try {
-    return {
-      value: vm.run(code),
-      err: false,
-    };
-  } catch (err) {
-    return { value: err, err: true };
-  }
-}
+export class VirtualMachine {
+  vm: NodeVM;
+  console: Console;
+  sandbox: Record<string, any> = {};
 
-// set the console redirect output
-export function setConsole(newConsole): void {
-  consol = newConsole;
+  constructor() {
+    this.vm = new NodeVM({
+      sandbox: this.sandbox,
+      require: {
+        external: false,
+        builtin: ["*"],
+      },
+      console: "redirect",
+    })
+      .on("console.log", function (...msg) {
+        this.appendConsole("log", msg);
+      })
+      .on("console.info", function (...msg) {
+        this.appendConsole("log", msg);
+      })
+      .on("console.warn", function (...msg) {
+        this.appendConsole("warn", msg);
+      })
+      .on("console.error", function (...msg) {
+        this.appendConsole("error", msg);
+      });
+  }
+
+  run(code: string, fileName = "unknown"): VMResult {
+    this.reset();
+    try {
+      const script = new VMScript(code, fileName);
+      const result = this.vm.run(script);
+      return {
+        result,
+        err: false,
+      };
+    } catch (err) {
+      return { result: err, err: true };
+    }
+  }
+
+  reset(): void {
+    for (const i in this.sandbox) {
+      delete this.sandbox[i];
+    }
+  }
+
+  appendConsole(kind: string, msg: Array<any>): void {
+    if (this.console) msg.forEach((i) => this.console[kind](i));
+  }
 }
 
 // set the node require root

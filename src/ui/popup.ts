@@ -14,7 +14,7 @@ const defaultOpts: PopupOptions = {
 };
 
 export class Popup extends Element {
-  private shown: boolean = false;
+  private shown = false;
   private fadeTimeout;
   readonly options: PopupOptions;
 

@@ -59,8 +59,8 @@ export class Console extends Element {
     });
 
     const history: Array<string> = [];
-    let histIndex: number = -1;
-    let currentCode: string = "";
+    let histIndex = -1;
+    let currentCode = "";
     this.input.listen("runCode", "enter", () => {
       // TODO console icons, see more below
       // need icon for console input, console

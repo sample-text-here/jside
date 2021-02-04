@@ -2,7 +2,8 @@ import { join } from "path";
 import * as fs from "fs";
 import { remote } from "electron";
 import event from "../libs/events";
-import { options, paths, save } from "./options";
+import { paths } from "./util";
+import { options, save } from "./options";
 
 const updateEv = event("reload.recents", true);
 export function touch(path: string): void {

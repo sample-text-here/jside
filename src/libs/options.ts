@@ -2,24 +2,8 @@
 
 import { join } from "path";
 import { NodeVM } from "vm2";
-import { deepCopy, matches, assign } from "./util";
+import * as util from "./util";
 import * as fs from "fs";
-import { app as _app, remote } from "electron";
-const app = _app || remote.app;
-export const dataDir = app.getPath("userData");
-if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
-
-export const paths = {
-  internal: join(dataDir, "internal.json"),
-  sketch: join(dataDir, "sketch.js"),
-  config: join(dataDir, "config.js"),
-};
-
-if (!fs.existsSync(paths.sketch)) fs.writeFileSync(paths.sketch, "");
-if (!fs.existsSync(paths.internal)) fs.writeFileSync(paths.internal, "{}");
-if (!fs.existsSync(paths.config)) {
-  fs.writeFileSync(paths.config, "// config goes here\n\nmodule.exports = {}");
-}
 
 interface Options {
   filters: Array<{ name: string; extensions: Array<string> }>;
@@ -99,6 +83,7 @@ const defaultOptions: Options = {
       openRecent: "ctrl-shift-o",
       showFile: "ctrl-shift-e",
       sketchpad: "ctrl-alt-o",
+      new: "ctrl-n",
       quit: "ctrl-q",
       config: "ctrl-,",
     },
@@ -106,19 +91,19 @@ const defaultOptions: Options = {
   internal: {
     recent: [],
   },
-  backup: join(dataDir, "backup.js"),
-  filesDir: join(dataDir, "files"),
+  backup: join(util.paths.data, "backup.js"),
+  filesDir: join(util.paths.data, "files"),
   maxRecent: 10,
 };
 
-export const options: Options = deepCopy<Options>(defaultOptions);
+export const options: Options = util.deepCopy<Options>(defaultOptions);
 
-function isOptions(obj: Object): obj is Options {
-  return matches(obj, defaultOptions);
+function isOptions(obj: Record<string, any>): obj is Options {
+  return util.matches(obj, defaultOptions);
 }
 
 export function save() {
-  fs.writeFileSync(paths.internal, JSON.stringify(options.internal));
+  fs.writeFileSync(util.paths.internal, JSON.stringify(options.internal));
 }
 
 const vm = new NodeVM({
@@ -129,29 +114,29 @@ const vm = new NodeVM({
 });
 
 export function reload(): void {
-  const newOpts: Options = deepCopy<Options>(defaultOptions);
+  const newOpts: Options = util.deepCopy<Options>(defaultOptions);
 
   try {
-    const json = JSON.parse(fs.readFileSync(paths.internal, "utf8"));
+    const json = JSON.parse(fs.readFileSync(util.paths.internal, "utf8"));
     if (typeof json !== "object") throw "not object";
     if (!json) throw "is null";
-    assign(newOpts.internal, json);
+    util.assign(newOpts.internal, json);
   } catch {
-    fs.writeFileSync(paths.internal, "{}");
+    fs.writeFileSync(util.paths.internal, "{}");
   }
 
   try {
-    const toEval = fs.readFileSync(paths.config, "utf8");
+    const toEval = fs.readFileSync(util.paths.config, "utf8");
     const result = vm.run(toEval);
     if (typeof result !== "object") throw "result not an object";
     if (!result) throw "result is null";
-    assign(newOpts, result);
+    util.assign(newOpts, result);
   } catch (err) {
     console.error(err);
   }
 
   const allFilters: Array<string> = [];
-  for (let i of newOpts.filters) {
+  for (const i of newOpts.filters) {
     allFilters.push(...i.extensions);
   }
   newOpts.filters.push({ name: "all", extensions: allFilters });

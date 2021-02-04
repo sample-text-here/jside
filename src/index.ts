@@ -11,8 +11,8 @@ import {
 import * as fs from "fs";
 import * as path from "path";
 import { generateMenu, generateRecents } from "./libs/menu";
-import { parse } from "./libs/args";
-import { paths, options, reload } from "./libs/options";
+import { paths, parse } from "./libs/util";
+import { options, reload } from "./libs/options";
 import { Bind } from "./libs/keybind";
 import event from "./libs/events";
 const args = parse();
@@ -40,7 +40,7 @@ function regenMenu(): void {
 
   const binds = options.keybinds;
   const override = { ...binds.files, ...binds.code };
-  for (let bind in override) {
+  for (const bind in override) {
     keys.push({ bind: new Bind(override[bind]), message: bind });
   }
 
@@ -88,20 +88,30 @@ function createSession(): BrowserWindow {
     press.shift = input.shift;
     press.alt = input.alt;
     if (!press.isValid()) return;
-    for (let i of keys) {
+    for (const i of keys) {
       if (press.isSame(i.bind)) {
         e.preventDefault();
         win.webContents.send("menu", i.message);
-        if (i.message === "quit") {
-          win.close();
-          const index = sessions.indexOf(win);
-          if (index < 0) return;
-          sessions.splice(index, 1);
-          if (sessions.length <= 0) return;
+        switch (i.message) {
+          case "quit":
+            win.close();
+            return;
+          case "new":
+            createSession();
+            return;
+          default:
+            win.webContents.send("menu", i.message);
         }
         return;
       }
     }
+  });
+
+  win.on("close", () => {
+    const index = sessions.indexOf(win);
+    if (index < 0) return;
+    sessions.splice(index, 1);
+    if (sessions.length === 0) app.quit();
   });
 
   return win;

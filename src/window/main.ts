@@ -53,7 +53,7 @@ ev.open.addListener(() => {
 
   // ace editor bug
   window.blur();
-  window.focus();
+  queueMicrotask(window.focus);
 });
 
 edit.editor.session.on("change", () => {
@@ -63,6 +63,7 @@ edit.editor.session.on("change", () => {
 });
 
 function touch(path) {
+  if (!path) return;
   const index = recent.indexOf(path);
   if (index >= 0) recent.splice(index, 1);
   while (recent.length > options.maxRecent) recent.pop();
@@ -113,6 +114,7 @@ function format(): void {
   const result = formatWithCursor(value, {
     cursorOffset: index,
     parser,
+    tabWidth: options.editor.tabSize,
   });
   editor.session.doc.setValue(result.formatted);
   const position = editor.session.doc.indexToPosition(result.cursorOffset);
@@ -203,7 +205,7 @@ ipcRenderer.on("openRecent", (e, path) => {
 
 function updateTitle(): void {
   let title = "jside";
-  if (files.path && files.path !== paths.sketch) {
+  if (files.path) {
     title += " - " + files.name;
     if (files.updated) title += "*";
   }

@@ -3,4 +3,130 @@
   --foreground: #f8f8f2;
   --accent: #1186d9;
   --selection: #f8f8f233;
+
+  --string: #f8f8f233;
+  --number: #f8f8f233;
+}
+
+.ace_gutter {
+  background: #2f3129;
+  color: #8f908a;
+}
+
+.ace_print-margin {
+  width: 1px;
+  background: #555651;
+}
+
+.editor {
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+.ace_cursor {
+  color: #f8f8f0;
+}
+
+.ace_marker-layer .ace_selection {
+  background: #49483e;
+}
+
+.ace_multiselect .ace_selection.ace_start {
+  box-shadow: 0 0 3px 0px #272822;
+}
+
+.ace_marker-layer .ace_step {
+  background: rgb(102, 82, 0);
+}
+
+.ace_marker-layer .ace_bracket {
+  margin: -1px 0 0 -1px;
+  border: 1px solid #49483e;
+}
+
+.ace_marker-layer .ace_active-line {
+  background: #202020;
+}
+
+.ace_gutter-active-line {
+  background-color: #272727;
+}
+
+.ace_marker-layer .ace_selected-word {
+  border: 1px solid #49483e;
+}
+
+.ace_invisible {
+  color: #52524d;
+}
+
+.ace_entity.ace_name.ace_tag,
+.ace_keyword,
+.ace_meta.ace_tag,
+.ace_storage {
+  color: #f92672;
+}
+
+.ace_punctuation,
+.ace_punctuation.ace_tag {
+  color: #fff;
+}
+
+.ace_constant.ace_character,
+.ace_constant.ace_language,
+.ace_constant.ace_numeric,
+.ace_constant.ace_other {
+  color: #ae81ff;
+}
+
+.ace_invalid {
+  color: #f8f8f0;
+  background-color: #f92672;
+}
+
+.ace_invalid.ace_deprecated {
+  color: #f8f8f0;
+  background-color: #ae81ff;
+}
+
+.ace_support.ace_constant,
+.ace_support.ace_function {
+  color: #66d9ef;
+}
+
+.ace_fold {
+  background-color: #a6e22e;
+  border-color: #f8f8f2;
+}
+
+.ace_storage.ace_type,
+.ace_support.ace_class,
+.ace_support.ace_type {
+  font-style: italic;
+  color: #66d9ef;
+}
+
+.ace_entity.ace_name.ace_function,
+.ace_entity.ace_other,
+.ace_entity.ace_other.ace_attribute-name,
+.ace_variable {
+  color: #a6e22e;
+}
+
+..ace_variable.ace_parameter {
+  font-style: italic;
+  color: #fd971f;
+}
+
+..ace_string {
+  color: #e6db74;
+}
+
+..ace_comment {
+  color: #75715e;
+}
+
+.ace_indent-guide {
+  background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAACCAYAAACZgbYnAAAAEklEQVQImWPQ0FD0ZXBzd/wPAAjVAoxeSgNeAAAAAElFTkSuQmCC)
+    right repeat-y;
 }

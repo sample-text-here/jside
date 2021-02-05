@@ -52,6 +52,7 @@ export class FileHandler {
     if (path) this.value = files.openFile(path);
     this.edit.mode(this.ext || "js");
     if (path === util.paths.config) ev.openedConfig.fire();
+    if (path === util.paths.sketch) this.path = null;
     this.updated = false;
     ev.open.fire(path);
   }

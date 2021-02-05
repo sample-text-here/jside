@@ -8,6 +8,7 @@ import * as fs from "fs";
 interface Options {
   filters: Array<{ name: string; extensions: Array<string> }>;
   theme: Record<string, Record<string, string> | string>;
+  editor: Record<string, string | number>;
   keybinds: {
     [key: string]: Record<string, string>;
   };
@@ -46,6 +47,9 @@ const defaultOptions: Options = {
       string: "",
       parenthase: "",
     },
+  },
+  editor: {
+    tabSize: 2,
   },
   keybinds: {
     editor: {

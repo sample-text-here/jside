@@ -1,5 +1,6 @@
 // this is the main editor (left panel)
 import { Element } from "./index";
+import { options } from "../libs/options";
 import { create } from "../libs/elements";
 import { keywords } from "../libs/autocomplete";
 import * as ace from "ace-builds/src-noconflict/ace";
@@ -40,7 +41,7 @@ export class Editor extends Element {
       enableSnippets: true,
       enableLiveAutocompletion: true,
       useSoftTabs: true,
-      tabSize: 2,
+      tabSize: options.editor.tabSize,
       newLineMode: "unix",
       useWorker: true,
       copyWithEmptySelection: true,

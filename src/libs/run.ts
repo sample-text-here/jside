@@ -27,25 +27,26 @@ export class VirtualMachine {
   sandbox: Record<string, any> = {};
 
   constructor() {
-    this.vm = new NodeVM({
-      sandbox: this.sandbox,
+    const me = this;
+    me.vm = new NodeVM({
+      sandbox: me.sandbox,
       require: {
         external: false,
         builtin: ["*"],
       },
       console: "redirect",
     })
-      .on("console.log", function (...msg) {
-        this.appendConsole("log", msg);
+      .on("console.log", (...msg) => {
+        me.appendConsole("log", msg);
       })
-      .on("console.info", function (...msg) {
-        this.appendConsole("log", msg);
+      .on("console.info", (...msg) => {
+        me.appendConsole("log", msg);
       })
-      .on("console.warn", function (...msg) {
-        this.appendConsole("warn", msg);
+      .on("console.warn", (...msg) => {
+        me.appendConsole("warn", msg);
       })
-      .on("console.error", function (...msg) {
-        this.appendConsole("error", msg);
+      .on("console.error", (...msg) => {
+        me.appendConsole("error", msg);
       });
   }
 

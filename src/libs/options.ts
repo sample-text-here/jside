@@ -21,12 +21,14 @@ interface Options {
   };
 }
 
+// TODO: themes
 const defaultOptions: Options = {
   filters: [
     { name: "javascript", extensions: ["js"] },
     { name: "json", extensions: ["json"] },
     { name: "markdown", extensions: ["md"] },
     { name: "text", extensions: ["txt"] },
+    { name: "mindustry logic", extensions: ["mlog"] },
   ],
   theme: {
     isDark: "true",

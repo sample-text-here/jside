@@ -146,6 +146,7 @@ consol.run = (code): void => {
   updateTitle();
 };
 
+// TODO: replace console with markdown preview when there are compatable files
 function run(): void {
   const code = files.value;
   switch (files.ext) {

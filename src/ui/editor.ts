@@ -19,6 +19,7 @@ interface command {
   exec?: Function;
 }
 
+// TODO: highlight lines with comments starting with TODO
 export class Editor extends Element {
   editor;
 

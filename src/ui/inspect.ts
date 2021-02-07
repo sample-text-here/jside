@@ -14,6 +14,11 @@ function select(el: HTMLElement): void {
   selection.addRange(range);
 }
 
+function trim(str: string): string {
+  if (str.length < 50) return str;
+  return str.slice(0, 44) + "..." + str.slice(-3);
+}
+
 // TODO preview first few array items
 function displayArray(arr: Array<unknown>): HTMLElement {
   let expanded = false;
@@ -126,7 +131,6 @@ function displayPart(thing): HTMLElement {
     return create("div", ["value", "undefined"], "undefined");
   switch (typeof thing) {
     case "string":
-      // TODO trim string if its too long
       return create("div", ["value", "string"], `"${thing}"`);
       break;
     case "number":

@@ -1,4 +1,3 @@
-// TODO: use this file instead
 import { options } from "../../libs/options";
 import { Bind } from "../../libs/keybind";
 import { Popup } from "../../ui/popup";

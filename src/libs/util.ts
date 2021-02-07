@@ -108,7 +108,11 @@ class Args {
   }
 }
 
-export const args = new Args(process.argv.slice(app.isPackaged ? 1 : 2));
+export const args = new Args(
+  (process.type === "renderer" ? remote.process : process).argv.slice(
+    app.isPackaged ? 1 : 2
+  )
+);
 
 // file types
 

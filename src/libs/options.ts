@@ -1,7 +1,7 @@
 // save and load options
 
 import { join } from "path";
-import { NodeVM } from "vm2";
+import { VirtualMachine } from "./run";
 import * as util from "./util";
 import * as fs from "fs";
 
@@ -106,12 +106,7 @@ export function save() {
   fs.writeFileSync(util.paths.internal, JSON.stringify(options.internal));
 }
 
-const vm = new NodeVM({
-  require: {
-    external: false,
-    builtin: ["*"],
-  },
-});
+const vm = new VirtualMachine();
 
 export function reload(): void {
   const newOpts: Options = util.deepCopy<Options>(defaultOptions);
@@ -132,9 +127,10 @@ export function reload(): void {
   try {
     const toEval = fs.readFileSync(util.paths.config, "utf8");
     const result = vm.run(toEval);
-    if (typeof result !== "object") throw "result not an object";
-    if (!result) throw "result is null";
-    util.assign(newOpts, result);
+    if (result.err) throw "ur code doesnt work";
+    if (typeof result.result !== "object") throw "result not an object";
+    if (!result.result) throw "result is null";
+    util.assign(newOpts, result.result);
   } catch (err) {
     console.error(err);
   }

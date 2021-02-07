@@ -21,15 +21,15 @@ export function run(code: string): VMResult {
   }
 }
 
+// TODO: fix async/timeouts?
 export class VirtualMachine {
   vm: NodeVM;
   console: Console;
-  sandbox: Record<string, any> = {};
 
-  constructor() {
+  constructor(sandbox = {}) {
     const me = this;
-    me.vm = new NodeVM({
-      sandbox: me.sandbox,
+    this.vm = new NodeVM({
+      sandbox: { ...sandbox },
       require: {
         external: false,
         builtin: ["*"],
@@ -51,7 +51,6 @@ export class VirtualMachine {
   }
 
   run(code: string, fileName = "unknown"): VMResult {
-    this.reset();
     try {
       const script = new VMScript(code, fileName);
       const result = this.vm.run(script);
@@ -61,12 +60,6 @@ export class VirtualMachine {
       };
     } catch (err) {
       return { result: err, err: true };
-    }
-  }
-
-  reset(): void {
-    for (const i in this.sandbox) {
-      delete this.sandbox[i];
     }
   }
 

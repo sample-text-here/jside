@@ -16,7 +16,6 @@ import { options, reload } from "./libs/options";
 import { Bind } from "./libs/keybind";
 import event from "./libs/events";
 const keys = [];
-const sessions = [];
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require("electron-squirrel-startup")) app.quit();
@@ -59,7 +58,6 @@ function createWindow(file: string, options = {}): BrowserWindow {
     // icon: path.join(__dirname, "assets", "icon.png"),
     ...options,
   });
-  sessions.push(win);
 
   win.loadFile(path.join(__dirname, "window", file));
 
@@ -82,7 +80,7 @@ function createSession(): BrowserWindow {
 
   win.webContents.on("before-input-event", (e, input) => {
     const press = new Bind(input.key.toLowerCase());
-    press.ctrl = input.control || input.meta;
+    press.ctrl = process.platform === "darwin" ? input.meta : input.control;
     press.shift = input.shift;
     press.alt = input.alt;
     if (!press.isValid()) return;
@@ -104,13 +102,6 @@ function createSession(): BrowserWindow {
     }
   });
 
-  win.on("close", () => {
-    const index = sessions.indexOf(win);
-    if (index < 0) return;
-    sessions.splice(index, 1);
-    if (sessions.length === 0) app.quit();
-  });
-
   return win;
 }
 
@@ -118,8 +109,7 @@ function createSession(): BrowserWindow {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.on("ready", () => {
-  reload();
-  regenMenu();
+  reloadRecent();
   const win = createSession();
   win.once("ready-to-show", () => {
     if (args.file) {
@@ -133,15 +123,18 @@ app.on("window-all-closed", app.quit);
 // TODO: only reload needed parts
 // seperate event for a full reload
 const reloadEv = event("reload", true);
+const finishEv = event("reload.finish", true);
 function reloadAll(): void {
   reloadEv.fire();
   reload();
   regenMenu();
+  finishEv.fire();
 }
 
 function reloadRecent(): void {
   reload();
   regenMenu();
+  finishEv.fire();
 }
 
 fs.watchFile(paths.config, reloadAll);

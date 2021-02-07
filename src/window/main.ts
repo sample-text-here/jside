@@ -11,7 +11,7 @@ import { run as runInVm, VirtualMachine } from "../libs/run";
 import * as ts from "../libs/compile";
 import event from "../libs/events";
 import { options, reload, save } from "../libs/options";
-import { paths, args } from "../libs/util";
+import { paths, args, fileTypes } from "../libs/util";
 import { Keybinds } from "./scripts/editorKeybinds";
 import { FileHandler, EditorHook } from "./scripts/fileHandler";
 import { PluginManager } from "./scripts/pluginManager";
@@ -45,9 +45,18 @@ const ev = {
   open: event("file.open"),
 };
 
-// WIP: plugins
+// TODO: plugins
+// these are a work in progress and DO NOT WORK yet
+// do not try to use them
 if (args.has("dev")) {
-  const pluginManager = new PluginManager();
+  const pluginManager = new PluginManager(
+    {
+      window,
+      electron: require("electron"),
+      event,
+    },
+    consol
+  );
   pluginManager.load();
 }
 
@@ -110,34 +119,22 @@ function openThing(reopen = false): void {
 }
 
 function format(): void {
-  if (!["js", "ts", "json", "md"].includes(files.ext)) return;
-  const editor = edit.editor;
-  const cursor = editor.selection.getCursor();
-  const index = editor.session.doc.positionToIndex(cursor);
-  const value = editor.session.getValue();
-  let parser = null;
-  switch (files.ext) {
-    case "js":
-      parser = "babel";
-      break;
-    case "ts":
-      parser = "babel-typescript";
-      break;
-    case "json":
-    case "md":
-      parser = files.ext;
-      break;
-  }
-  if (!parser) return;
+  const found = fileTypes.find((i) => i.exts.includes(files.ext));
+  if (!found) return;
+  if (!("parse" in found)) return;
+  const session = edit.editor.session;
+  const cursor = edit.editor.selection.getCursor();
+  const index = session.doc.positionToIndex(cursor);
+  const value = session.getValue();
   const result = formatWithCursor(value, {
     cursorOffset: index,
-    parser,
+    parser: found.parse,
     tabWidth: options.editor.tabSize,
   });
-  editor.session.doc.setValue(result.formatted);
-  const position = editor.session.doc.indexToPosition(result.cursorOffset);
-  editor.clearSelection();
-  editor.moveCursorToPosition(position);
+  const position = session.doc.indexToPosition(result.cursorOffset);
+  session.doc.setValue(result.formatted);
+  edit.editor.clearSelection();
+  edit.editor.moveCursorToPosition(position);
 }
 
 bar.dragged = function (e): void {
@@ -207,8 +204,12 @@ ipcRenderer.on("menu", (e, message) => {
     case "reopen":
       openThing(true);
       break;
-    case "sketch":
+    case "sketchpad":
       files.openPath(paths.sketch);
+      reopenIndex = -1;
+      break;
+    case "config":
+      files.openPath(paths.config);
       break;
     case "showFile":
       if (files.path) ev.showFile.fire(files.path);
@@ -232,3 +233,4 @@ function updateTitle(): void {
 }
 
 files.openPath(paths.sketch);
+window.focus();

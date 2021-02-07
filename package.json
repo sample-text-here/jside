@@ -75,7 +75,7 @@
     "@electron-forge/maker-zip": "^6.0.0-beta.54",
     "@types/ace": "0.0.44",
     "@types/ncp": "^2.0.4",
-    "@types/node": "^12.19.12",
+    "@types/node": "^12.19.16",
     "@typescript-eslint/eslint-plugin": "^2.34.0",
     "@typescript-eslint/parser": "^2.34.0",
     "babel-plugin-transform-async-to-generator": "^6.24.1",
@@ -83,7 +83,7 @@
     "babel-preset-react": "^6.24.1",
     "electron-forge": "^5.2.4",
     "electron-prebuilt-compile": "8.2.0",
-    "eslint": "^7.17.0",
+    "eslint": "^7.19.0",
     "eslint-plugin-import": "^2.22.1",
     "ncp": "^2.0.0",
     "typescript": "^4.1.3"

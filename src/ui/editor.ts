@@ -1,8 +1,9 @@
 // this is the main editor (left panel)
 import { Element } from "./index";
 import { options } from "../libs/options";
+import { fileTypes } from "../libs/util";
 import { create } from "../libs/elements";
-import { keywords } from "../libs/autocomplete";
+import langs from "../langs";
 import * as ace from "ace-builds/src-noconflict/ace";
 import * as langTools from "ace-builds/src-noconflict/ext-language_tools";
 const acePath = "../../node_modules/ace-builds/src-noconflict";
@@ -11,13 +12,31 @@ ace.config.set("modePath", acePath);
 ace.config.set("themePath", acePath);
 ace.config.set("modePath", acePath);
 
-langTools.setCompleters([langTools.textCompleter, keywords]);
-
 interface command {
   name: string;
   bindKey: { win: string; mac: string };
   exec?: Function;
 }
+
+const defaults = {
+  enableBasicAutocompletion: true,
+  enableSnippets: true,
+  enableLiveAutocompletion: true,
+  useSoftTabs: true,
+  tabSize: options.editor.tabSize,
+  newLineMode: "unix",
+  useWorker: true,
+  copyWithEmptySelection: true,
+  showPrintMargin: false,
+};
+
+const workerDefaults = {
+  esversion: 10,
+  unused: true,
+  varstmt: true,
+  debug: true,
+  node: true,
+};
 
 // TODO: highlight lines with comments starting with TODO
 export class Editor extends Element {
@@ -35,32 +54,15 @@ export class Editor extends Element {
     // make it an editor
     const editor = ace.edit(el.id);
     editor.setTheme("ace/theme/monokai");
-    editor.session.setMode("ace/mode/javascript");
-    editor.setShowPrintMargin(false);
-    editor.setOptions({
-      enableBasicAutocompletion: true,
-      enableSnippets: true,
-      enableLiveAutocompletion: true,
-      useSoftTabs: true,
-      tabSize: options.editor.tabSize,
-      newLineMode: "unix",
-      useWorker: true,
-      copyWithEmptySelection: true,
-    });
-    editor.session.on("change", () => {
-      if (editor.session.$worker)
-        editor.session.$worker.send("setOptions", [
-          {
-            esversion: 10,
-            unused: true,
-            varstmt: true,
-            debug: true,
-            node: true,
-          },
-        ]);
-    });
+    editor.setOptions(defaults);
     this.editor = editor;
     this.element = el;
+
+    // set the worker on change
+    editor.session.on("change", () => {
+      const worker = editor.session.$worker;
+      if (worker) worker.send("setOptions", [workerDefaults]);
+    });
   }
 
   listen(name: string, key: string, exec?: Function): void {
@@ -75,22 +77,19 @@ export class Editor extends Element {
 
   mode(ext) {
     const session = this.editor.session;
-    switch (ext) {
-      case "js":
-        session.setMode("ace/mode/javascript");
-        break;
-      case "ts":
-        session.setMode("ace/mode/typescript");
-        break;
-      case "json":
-        session.setMode("ace/mode/json");
-        break;
-      case "md":
-        session.setMode("ace/mode/markdown");
-        break;
-      default:
-        session.setMode("ace/mode/text");
-        break;
+    const fileType = fileTypes.find((i) => i.exts.includes(ext)) || {
+      name: "text",
+      autocomplete: false,
+    };
+    const completers = [];
+    // session.setMode(`ace/mode/${"customLang" in fileType ? "text" : fileType.name}`);
+    session.setMode(`ace/mode/${fileType.name.replace(/\s/g, "-")}`);
+    if (fileType.autocomplete) {
+      completers.push(langTools.textCompleter);
+      if (fileType.exts[0] in langs) {
+        completers.push(langs[fileType.exts[0]]);
+      }
     }
+    langTools.setCompleters(completers);
   }
 }

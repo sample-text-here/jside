@@ -1,5 +1,8 @@
-export interface Autocomplete {
-  caption: string;
-  value: string;
-  meta: string;
-}
+import script from "./javascript";
+import mlog from "./mlog";
+
+export default {
+  js: script,
+  ts: script,
+  mlog,
+};

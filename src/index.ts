@@ -11,11 +11,10 @@ import {
 import * as fs from "fs";
 import * as path from "path";
 import { generateMenu, generateRecents } from "./libs/menu";
-import { paths, parse } from "./libs/util";
+import { paths, args } from "./libs/util";
 import { options, reload } from "./libs/options";
 import { Bind } from "./libs/keybind";
 import event from "./libs/events";
-const args = parse();
 const keys = [];
 const sessions = [];
 
@@ -23,7 +22,7 @@ const sessions = [];
 if (require("electron-squirrel-startup")) app.quit();
 
 function regenMenu(): void {
-  const menu = generateMenu(args.options.includes("dev"));
+  const menu = generateMenu(args.has("dev"));
   menu.append(
     new MenuItem({
       label: "help",

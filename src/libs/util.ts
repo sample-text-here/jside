@@ -3,21 +3,27 @@ import * as fs from "fs";
 import * as path from "path";
 import { app as _app, remote } from "electron";
 export const app = _app || remote.app;
-const dataDir = app.getPath("userData");
 
+// setup data paths
+
+const dataDir = app.getPath("userData");
 export const paths = {
   data: dataDir,
+  plugins: path.join(dataDir, "plugins"),
   internal: path.join(dataDir, "internal.json"),
   sketch: path.join(dataDir, "sketch.js"),
   config: path.join(dataDir, "config.js"),
 };
 
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+if (!fs.existsSync(paths.plugins)) fs.mkdirSync(paths.plugins);
 if (!fs.existsSync(paths.sketch)) fs.writeFileSync(paths.sketch, "");
 if (!fs.existsSync(paths.internal)) fs.writeFileSync(paths.internal, "{}");
 if (!fs.existsSync(paths.config)) {
   fs.writeFileSync(paths.config, "// config goes here\n\nmodule.exports = {}");
 }
+
+// object utility functions
 
 export function deepCopyArray(arr: Array<any>) {
   const out: Array<any> = [];
@@ -81,15 +87,78 @@ export function assign(a: Record<string, any>, b: Record<string, any>): void {
   }
 }
 
-export function parse() {
-  let file = null;
-  const options: Array<string> = [];
-  for (const i of process.argv.slice(app.isPackaged ? 1 : 2)) {
-    if (/^--/.test(i)) {
-      options.push(i.substr(2));
-    } else if (fs.existsSync(i)) {
-      file = i;
+// parse args
+
+class Args {
+  file: string = "";
+  flags: Array<string> = [];
+
+  constructor(args) {
+    for (const i of args) {
+      if (/^--/.test(i)) {
+        this.flags.push(i.substr(2));
+      } else if (fs.existsSync(i)) {
+        this.file = i;
+      }
     }
   }
-  return { file, options };
+
+  has(arg: string) {
+    return this.flags.includes(arg);
+  }
 }
+
+export const args = new Args(process.argv.slice(app.isPackaged ? 1 : 2));
+
+// file types
+
+interface FileType {
+  name: string;
+  exts: Array<string>;
+  parse?: string;
+  autocomplete: boolean;
+  sidePanel: "console" | "preview" | "none";
+}
+
+export const fileTypes: Array<FileType> = [
+  {
+    name: "javascript",
+    exts: ["js"],
+    parse: "babel",
+    autocomplete: true,
+    sidePanel: "console",
+  },
+  {
+    name: "typescript",
+    exts: ["ts"],
+    parse: "babel-typescript",
+    autocomplete: true,
+    sidePanel: "console",
+  },
+  {
+    name: "json",
+    exts: ["json"],
+    parse: "json",
+    autocomplete: true,
+    sidePanel: "console",
+  },
+  {
+    name: "markdown",
+    exts: ["md"],
+    parse: "markdown",
+    autocomplete: false,
+    sidePanel: "preview",
+  },
+  {
+    name: "mindustry logic",
+    exts: ["mlog"],
+    autocomplete: true,
+    sidePanel: "none",
+  },
+  {
+    name: "text",
+    exts: ["txt"],
+    autocomplete: false,
+    sidePanel: "none",
+  },
+];

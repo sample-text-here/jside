@@ -11,9 +11,10 @@ import { run as runInVm, VirtualMachine } from "../libs/run";
 import * as ts from "../libs/compile";
 import event from "../libs/events";
 import { options, reload, save } from "../libs/options";
-import { paths } from "../libs/util";
+import { paths, args } from "../libs/util";
 import { Keybinds } from "./scripts/editorKeybinds";
-import { FileHandler } from "./scripts/fileHandler";
+import { FileHandler, EditorHook } from "./scripts/fileHandler";
+import { PluginManager } from "./scripts/pluginManager";
 
 const main = document.getElementById("main");
 const edit = new Editor(main);
@@ -22,8 +23,18 @@ const consol = new Console(main);
 const reloadPopup = new Popup(document.body, "reloaded!", { fade: 1000 });
 bar.element.style.gridArea = "resize";
 
+const editInterface: EditorHook = {
+  getValue(): string {
+    return edit.editor.session.getValue();
+  },
+
+  setValue(val: string) {
+    edit.editor.session.setValue(val);
+  },
+};
+
 const vm = new VirtualMachine();
-const files = new FileHandler(edit);
+const files = new FileHandler(editInterface);
 const keybinds = new Keybinds(edit, options.keybinds.editor);
 const recent = options.internal.recent;
 const ev = {
@@ -33,6 +44,12 @@ const ev = {
   reloadRecent: event("reload.recent", true),
   open: event("file.open"),
 };
+
+// WIP: plugins
+if (args.has("dev")) {
+  const pluginManager = new PluginManager();
+  pluginManager.load();
+}
 
 ev.openedConfig.addListener(() => {
   consol.createAppender(true, "#e6e155")("you are editing a config file");
@@ -50,6 +67,7 @@ ev.reload.addListener(() => {
 ev.open.addListener(() => {
   files.updated = false;
   updateTitle();
+  edit.mode(files.ext || "js");
 
   // ace editor bug
   window.blur();
@@ -125,7 +143,7 @@ function format(): void {
 bar.dragged = function (e): void {
   const barWidth = 3,
     minX = 0,
-    maxX = window.innerWidth - barWidth;
+    maxX = window.innerWidth;
   let newX = e.clientX;
   if (newX < minX) newX = minX;
   if (newX > maxX) newX = maxX;
@@ -148,7 +166,7 @@ consol.run = (code): void => {
 
 // TODO: replace console with markdown preview when there are compatable files
 function run(): void {
-  const code = files.value;
+  const code = editInterface.getValue();
   switch (files.ext) {
     case "js":
       const res = vm.run(code);

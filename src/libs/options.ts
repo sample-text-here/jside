@@ -23,13 +23,7 @@ interface Options {
 
 // TODO: themes
 const defaultOptions: Options = {
-  filters: [
-    { name: "javascript", extensions: ["js"] },
-    { name: "json", extensions: ["json"] },
-    { name: "markdown", extensions: ["md"] },
-    { name: "text", extensions: ["txt"] },
-    { name: "mindustry logic", extensions: ["mlog"] },
-  ],
+  filters: [],
   theme: {
     isDark: "true",
     main: {
@@ -121,6 +115,10 @@ const vm = new NodeVM({
 
 export function reload(): void {
   const newOpts: Options = util.deepCopy<Options>(defaultOptions);
+  newOpts.filters = util.fileTypes.map((i) => ({
+    name: i.name,
+    extensions: i.exts,
+  }));
 
   try {
     const json = JSON.parse(fs.readFileSync(util.paths.internal, "utf8"));

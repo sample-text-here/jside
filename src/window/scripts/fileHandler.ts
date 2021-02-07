@@ -3,7 +3,6 @@ import { basename, extname } from "path";
 import { options } from "../../libs/options";
 import * as util from "../../libs/util";
 import event from "../../libs/events";
-import { Editor } from "../../ui/editor";
 
 const ev = {
   open: event("file.open"),
@@ -13,29 +12,26 @@ const ev = {
   openedConfig: event("warn.config"),
 };
 
+export interface EditorHook {
+  getValue: () => string;
+  setValue: (string) => void;
+}
+
 export class FileHandler {
-  path: string = null;
-  edit: Editor = null;
+  path: string = "";
+  hook: EditorHook;
   updated = false;
 
-  constructor(edit: Editor) {
-    this.edit = edit;
+  constructor(hook: EditorHook) {
+    this.hook = hook;
   }
 
   get ext(): string {
-    return extname(this.path).replace(/^\./, "");
+    return this.path ? extname(this.path).replace(/^\./, "") : "js";
   }
 
   get name(): string {
-    return basename(this.path);
-  }
-
-  get value(): string {
-    return this.edit.editor.session.getValue();
-  }
-
-  set value(val) {
-    this.edit.editor.session.setValue(val);
+    return this.path ? basename(this.path) : "";
   }
 
   confirm(): boolean {
@@ -49,8 +45,7 @@ export class FileHandler {
     if (!path) return;
     if (!this.confirm()) return;
     this.path = path;
-    if (path) this.value = files.openFile(path);
-    this.edit.mode(this.ext || "js");
+    if (path) this.hook.setValue(files.openFile(path));
     if (path === util.paths.config) ev.openedConfig.fire();
     if (path === util.paths.sketch) this.path = null;
     this.updated = false;
@@ -69,7 +64,7 @@ export class FileHandler {
     if (!this.path) this.path = files.fileSave();
     if (!this.path) return;
     this.updated = false;
-    files.saveFile(this.path, this.value);
+    files.saveFile(this.path, this.hook.getValue());
     if (this.path === util.paths.config) ev.reload.fire();
     ev.save.fire(this.path);
   }
@@ -87,6 +82,6 @@ export class FileHandler {
 
   backup(): void {
     const path = this.path ? options.backup : util.paths.sketch;
-    files.saveFile(path, this.value);
+    files.saveFile(path, this.hook.getValue());
   }
 }

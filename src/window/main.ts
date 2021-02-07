@@ -90,7 +90,7 @@ function touch(path) {
   ev.reloadRecent.fire();
 }
 
-let reopenIndex = 0;
+let reopenIndex = -1;
 let reopenTimeout;
 function openThing(reopen = false): void {
   clearTimeout(reopenTimeout);
